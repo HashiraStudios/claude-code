@@ -35,6 +35,7 @@ The reference files are the core of the modeling capability — load and use the
 | `references/trim-sheet.py` | Trim-sheet texturing for modular architecture, executable: procedurally build a 256px sheet of horizontal tiling strips (stone/plaster/beam/planks/shingles/door), one material, and `trim_map()` (U tiles along the strip, V fitted with bleed margin; map pieces axis-aligned, rotate the object after). |
 | `references/character-lowpoly.md` | Character workflow: heads-based proportions, part construction with joint rings, mandatory eyes, palette split, minimal Python rig with pose bend test. |
 | `references/uv-gradation.py` | The PROFESSIONAL colormap tier (Japanese gradation-atlas workflow): multi-stop ramps with hue-shifted shadows, OPEN rectangular axis-aligned unwraps (`unwrap_cylinder_open`/`unwrap_planar`), island placement onto ramps (`place_island`), UV-hack shading (`shade_shift`), free recolors (`recolor_shift`), and `export_uv_layout` proof images. |
+| `references/shape-language.py` | The Supercell/Riot STYLE tier: form deformers (`taper`, `bulge`, `lean`, `curve`, `squash` + `subdivide_rings`) and the shape rules — nothing straight, exaggerate the signature element, big/medium/small rhythm, tilt for charm, soft toy edges. Order: build → subdivide → deform → unwrap → join. |
 
 ---
 

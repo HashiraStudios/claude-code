@@ -102,7 +102,7 @@ def assign_material(obj, mat):
 
 def _uv_layer(obj):
     uv = obj.data.uv_layers.active
-    return uv if uv else obj.data.uv_layers.new(name="PaletteUV")
+    return uv if uv else obj.data.uv_layers.new(name="UVMap")
 
 
 def flat_uv(cell):

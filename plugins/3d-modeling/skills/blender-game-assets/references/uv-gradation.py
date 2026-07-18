@@ -127,7 +127,7 @@ def gradation_material(name, img):
 # ---------------------------------------------------------------------------
 
 def _uv_layer(obj):
-    return obj.data.uv_layers.active or obj.data.uv_layers.new(name="GradUV")
+    return obj.data.uv_layers.active or obj.data.uv_layers.new(name="UVMap")
 
 
 def unwrap_cylinder_open(obj, poly_indices, axis='Z'):

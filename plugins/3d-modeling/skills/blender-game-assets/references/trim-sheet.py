@@ -164,7 +164,7 @@ def trim_map(obj, poly_indices, strip, density=1.0, margin_px=2):
     Requires the piece to be axis-aligned when called — rotate the object
     AFTER mapping. Per-face dominant-axis projection:
       +-Z faces: U<-x, Vaxis<-y ; +-X faces: U<-y ; +-Y faces: U<-x."""
-    uv = obj.data.uv_layers.active or obj.data.uv_layers.new(name="TrimUV")
+    uv = obj.data.uv_layers.active or obj.data.uv_layers.new(name="UVMap")
     y0, y1 = STRIPS[strip]
     v0, v1 = (y0 + margin_px) / SIZE, (y1 - margin_px) / SIZE
 

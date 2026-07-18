@@ -22,6 +22,21 @@ because it delivers all three at once.
   sky light (light top → dark bottom) for free. Use on foliage, rocks, walls,
   cliffs. Flat cells for small parts and man-made surfaces.
 
+## Shape language: the Supercell/Riot form rules
+
+Style lives in FORM before texture (deformers in `shape-language.py`):
+
+- **Nothing is straight.** Every wall, trunk, post gets taper/bulge/lean.
+  A straight cylinder is programmer art; +25% belly is a toy.
+- **Exaggerate the signature element** 150–200% — a Clash house is half roof;
+  shrink whatever competes with it.
+- **Big / Medium / Small** (~70/20/10). One dominant mass, one support, small
+  accents. Riot: "detail everywhere is as good as no detail" — leave rest areas.
+- **Tilt for charm**: 3–8° of lean on chimneys, posts, hats.
+- **Soft toy edges**: generous bevels, 2–3 segments.
+- Workflow order matters: build → `subdivide_rings` → deform → unwrap → place
+  → join (a 6-face box cannot bulge, and UVs are computed from deformed verts).
+
 ## Mesh beauty: what makes topology "bonita"
 
 A mesh is presentable when someone opening the wireframe nods:

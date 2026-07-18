@@ -158,15 +158,22 @@ def trim_material(name, img):
     return mat
 
 
-def trim_map(obj, poly_indices, strip, density=1.0, margin_px=2):
+def _strip_band(strip, margin_px=2):
+    y0, y1 = STRIPS[strip]
+    return (y0 + margin_px) / SIZE, (y1 - margin_px) / SIZE
+
+
+def trim_map(obj, poly_indices, strip, density=1.0, margin_px=2, fit='selection'):
     """UV-map polygons onto a strip: U = world distance x density (tiles),
-    V = fitted across the selection's span (with a bleed margin).
+    V = fitted (with a bleed margin). fit='selection' spans the whole
+    selection across the strip; fit='face' is HOTSPOT mode — every face
+    fills the strip's full height on its own (each wall quad gets the
+    complete detail, the modular-kit standard).
     Requires the piece to be axis-aligned when called — rotate the object
     AFTER mapping. Per-face dominant-axis projection:
       +-Z faces: U<-x, Vaxis<-y ; +-X faces: U<-y ; +-Y faces: U<-x."""
     uv = obj.data.uv_layers.active or obj.data.uv_layers.new(name="UVMap")
-    y0, y1 = STRIPS[strip]
-    v0, v1 = (y0 + margin_px) / SIZE, (y1 - margin_px) / SIZE
+    v0, v1 = _strip_band(strip, margin_px)
 
     polys = [obj.data.polygons[i] for i in poly_indices]
     spans = []
@@ -179,7 +186,68 @@ def trim_map(obj, poly_indices, strip, density=1.0, margin_px=2):
     mn, mx = min(vcoords), max(vcoords)
     span = (mx - mn) or 1.0
     for p, ua, va in spans:
+        if fit == 'face':
+            fvs = [obj.data.vertices[vi].co[va] for vi in p.vertices]
+            fmn, fspan = min(fvs), (max(fvs) - min(fvs)) or 1.0
         for li, vi in zip(p.loop_indices, p.vertices):
             co = obj.data.vertices[vi].co
-            t = (co[va] - mn) / span
+            if fit == 'face':
+                t = (co[va] - fmn) / fspan
+            else:
+                t = (co[va] - mn) / span
             uv.data[li].uv = (co[ua] * density, v0 + t * (v1 - v0))
+
+
+def trim_swap(obj, poly_indices, strip, margin_px=2):
+    """ONE-CLICK DETAIL SWAP (the trim-system payoff): re-fit the current V
+    of these polys into a different strip, keeping U untouched. Iterate a
+    kit's details — planks -> panels -> stone — without remapping anything."""
+    uv = obj.data.uv_layers.active
+    v0, v1 = _strip_band(strip, margin_px)
+    lis = [li for pi in poly_indices
+           for li in obj.data.polygons[pi].loop_indices]
+    if not lis:
+        return
+    vs = [uv.data[li].uv[1] for li in lis]
+    mn, span = min(vs), (max(vs) - min(vs)) or 1.0
+    for li in lis:
+        u, v = uv.data[li].uv
+        uv.data[li].uv = (u, v0 + (v - mn) / span * (v1 - v0))
+
+
+def trim_map_around(obj, poly_indices, strip, density=1.0, margin_px=2,
+                    axis='Z', fit='selection'):
+    """BEND THE UVs: map a curved section (tower wall, arch, cone roof)
+    continuously around `axis` — U accumulates along the arc in world
+    units (angle x mean radius x density) so the trim flows around the
+    curve without stretching; V fits the strip. Per-loop seam handling."""
+    import math as _m
+    uv = obj.data.uv_layers.active or obj.data.uv_layers.new(name="UVMap")
+    v0, v1 = _strip_band(strip, margin_px)
+    ai = {'X': 0, 'Y': 1, 'Z': 2}[axis]
+    bi, ci = (ai + 1) % 3, (ai + 2) % 3
+    polys = [obj.data.polygons[i] for i in poly_indices]
+    rs, vcs = [], []
+    for p in polys:
+        for vi in p.vertices:
+            co = obj.data.vertices[vi].co
+            rs.append(_m.hypot(co[bi], co[ci]))
+            vcs.append(co[ai])
+    r_avg = sum(rs) / len(rs)
+    mn, mx = min(vcs), max(vcs)
+    span = (mx - mn) or 1.0
+    for p in polys:
+        thetas = {}
+        for vi in p.vertices:
+            co = obj.data.vertices[vi].co
+            thetas[vi] = _m.atan2(co[ci], co[bi])
+        if max(thetas.values()) - min(thetas.values()) > _m.pi:  # seam wrap
+            thetas = {vi: (t + 2 * _m.pi if t < 0 else t)
+                      for vi, t in thetas.items()}
+        if fit == 'face':
+            fvs = [obj.data.vertices[vi].co[ai] for vi in p.vertices]
+            fmn, fspan = min(fvs), (max(fvs) - min(fvs)) or 1.0
+        for li, vi in zip(p.loop_indices, p.vertices):
+            co = obj.data.vertices[vi].co
+            t = ((co[ai] - fmn) / fspan) if fit == 'face' else ((co[ai] - mn) / span)
+            uv.data[li].uv = (thetas[vi] * r_avg * density, v0 + t * (v1 - v0))

@@ -160,7 +160,7 @@ def _bake_setup(samples):
     scene.render.engine = 'CYCLES'
     scene.cycles.device = 'CPU'
     scene.cycles.samples = samples
-    scene.render.bake.margin = 4
+    scene.render.bake.margin = 8
 
 
 def bake_ao(obj, size=512, samples=32, path=None):

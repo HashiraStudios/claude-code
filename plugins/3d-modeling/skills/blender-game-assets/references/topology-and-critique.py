@@ -77,13 +77,16 @@ def _frame(cam, target, direction, ortho=True):
     center = sum(bb, Vector()) / 8
     radius = max((v - center).length for v in bb)
     d = Vector(direction).normalized()
-    cam.location = center + d * radius * 4
-    # aim
-    look = (center - cam.location).normalized()
-    cam.rotation_euler = look.to_track_quat('-Z', 'Y').to_euler()
     cam.data.type = 'ORTHO' if ortho else 'PERSP'
     if ortho:
+        cam.location = center + d * radius * 4
         cam.data.ortho_scale = radius * 2.4
+    else:
+        # tight portfolio framing: longer lens, closer in
+        cam.data.lens = 58
+        cam.location = center + d * radius * 2.75
+    look = (center - cam.location).normalized()
+    cam.rotation_euler = look.to_track_quat('-Z', 'Y').to_euler()
 
 
 def render_turntable(obj, name="critique", shading='MATCAP'):
@@ -169,44 +172,76 @@ def critique():
 # BEAUTY RENDER — colored presentation shots (Cycles CPU, headless-safe)
 # ---------------------------------------------------------------------------
 
-def render_beauty(target, name="beauty", samples=48, sun_dir=(-0.6, 0.4, -1.0)):
-    """Presentation render of the scene framed on `target`, with a sun key
-    light and soft sky fill. Cycles on CPU — slower than Workbench but needs
-    no GPU/GL and shows the palette material with real light. Renders two
-    hero angles (3/4 left and 3/4 right)."""
+def _light(name, kind, energy, color, direction, size=None):
     import mathutils
+    ob = bpy.data.objects.get(name)
+    if ob is None:
+        data = bpy.data.lights.new(name, kind)
+        ob = bpy.data.objects.new(name, data)
+        bpy.context.collection.objects.link(ob)
+    ob.data.energy = energy
+    ob.data.color = color
+    if kind == 'SUN' and size is not None:
+        ob.data.angle = size
+    d = mathutils.Vector(direction).normalized()
+    ob.rotation_euler = d.to_track_quat('-Z', 'Y').to_euler()
+    return ob
+
+
+def render_beauty(target, name="beauty", samples=48, res=1024):
+    """PRESENTATION render — the difference between a screenshot and a
+    portfolio shot:
+      * 'Standard' view transform. Blender's default AgX desaturates flat
+        stylized colors into mud; Standard keeps the palette as authored.
+      * Three-point light: warm soft key sun, cool fill, white rim from
+        behind — form reads, shadows stay colored, silhouette pops.
+      * Gradient sky (warm horizon -> cool zenith) instead of dead gray.
+    Cycles CPU (headless-safe). Two hero angles, slightly low camera."""
     scene = bpy.context.scene
     scene.render.engine = 'CYCLES'
     scene.cycles.device = 'CPU'
     scene.cycles.samples = samples
     scene.cycles.use_denoising = False
-    scene.render.resolution_x = scene.render.resolution_y = 1024
+    scene.render.resolution_x = scene.render.resolution_y = res
     scene.render.film_transparent = False
+    scene.view_settings.view_transform = 'Standard'
+    scene.view_settings.look = 'None'
 
-    # soft bluish sky fill
+    # gradient sky: warm near the horizon, cool blue up top
     world = scene.world or bpy.data.worlds.new("World")
     scene.world = world
     world.use_nodes = True
-    bg = world.node_tree.nodes.get('Background')
-    if bg:
-        bg.inputs[0].default_value = (0.85, 0.90, 0.96, 1.0)
-        bg.inputs[1].default_value = 0.7
+    nt = world.node_tree
+    nt.nodes.clear()
+    tc = nt.nodes.new('ShaderNodeTexCoord')
+    sep = nt.nodes.new('ShaderNodeSeparateXYZ')
+    mr = nt.nodes.new('ShaderNodeMapRange')
+    mr.inputs['From Min'].default_value = -0.2
+    mr.inputs['From Max'].default_value = 0.8
+    mix = nt.nodes.new('ShaderNodeMix')
+    mix.data_type = 'RGBA'
+    mix.inputs['A'].default_value = (0.96, 0.93, 0.86, 1.0)   # horizon warm
+    mix.inputs['B'].default_value = (0.62, 0.76, 0.92, 1.0)   # zenith blue
+    bg = nt.nodes.new('ShaderNodeBackground')
+    bg.inputs['Strength'].default_value = 0.85
+    out = nt.nodes.new('ShaderNodeOutputWorld')
+    nt.links.new(tc.outputs['Generated'], sep.inputs['Vector'])
+    nt.links.new(sep.outputs['Z'], mr.inputs['Value'])
+    nt.links.new(mr.outputs['Result'], mix.inputs['Factor'])
+    nt.links.new(mix.outputs['Result'], bg.inputs['Color'])
+    nt.links.new(bg.outputs['Background'], out.inputs['Surface'])
 
-    # warm sun key
-    sun = bpy.data.objects.get("BeautySun")
-    if sun is None:
-        sun_data = bpy.data.lights.new("BeautySun", 'SUN')
-        sun = bpy.data.objects.new("BeautySun", sun_data)
-        bpy.context.collection.objects.link(sun)
-    sun.data.energy = 3.5
-    sun.data.angle = 0.2
-    sun.data.color = (1.0, 0.95, 0.85)
-    d = mathutils.Vector(sun_dir).normalized()
-    sun.rotation_euler = d.to_track_quat('-Z', 'Y').to_euler()
+    # three-point rig
+    _light("KeySun", 'SUN', 3.2, (1.0, 0.94, 0.82), (-0.55, 0.45, -1.0),
+           size=math.radians(9))                       # warm, soft shadows
+    _light("FillSun", 'SUN', 0.9, (0.72, 0.80, 0.95), (0.7, -0.4, -0.5),
+           size=math.radians(40))                      # cool, near-shadowless
+    _light("RimSun", 'SUN', 1.8, (1.0, 1.0, 1.0), (0.3, 0.9, -0.35),
+           size=math.radians(3))                       # crisp silhouette edge
 
     cam = _ensure_camera()
     paths = []
-    for label, direction in {"hero": (1, -1, 0.55), "rear": (-1, 1, 0.45)}.items():
+    for label, direction in {"hero": (1, -1, 0.45), "rear": (-1, 1, 0.4)}.items():
         _frame(cam, target, direction, ortho=False)
         scene.render.filepath = f"{OUT}/{name}_{label}.png"
         bpy.ops.render.render(write_still=True)

@@ -100,6 +100,9 @@ def render_turntable(obj, name="critique", shading='MATCAP'):
     if shading == 'MATERIAL':
         sh.light = 'STUDIO'
         sh.color_type = 'MATERIAL'
+    elif shading == 'TEXTURE':      # palette-atlas / textured previews
+        sh.light = 'STUDIO'
+        sh.color_type = 'TEXTURE'
     else:
         sh.light = 'MATCAP'
         sh.color_type = 'SINGLE'
@@ -160,3 +163,55 @@ never enough — the second pass is what separates built from generated.
 
 def critique():
     print(CRITIQUE)
+
+
+# ---------------------------------------------------------------------------
+# BEAUTY RENDER — colored presentation shots (Cycles CPU, headless-safe)
+# ---------------------------------------------------------------------------
+
+def render_beauty(target, name="beauty", samples=48, sun_dir=(-0.6, 0.4, -1.0)):
+    """Presentation render of the scene framed on `target`, with a sun key
+    light and soft sky fill. Cycles on CPU — slower than Workbench but needs
+    no GPU/GL and shows the palette material with real light. Renders two
+    hero angles (3/4 left and 3/4 right)."""
+    import mathutils
+    scene = bpy.context.scene
+    scene.render.engine = 'CYCLES'
+    scene.cycles.device = 'CPU'
+    scene.cycles.samples = samples
+    scene.cycles.use_denoising = False
+    scene.render.resolution_x = scene.render.resolution_y = 1024
+    scene.render.film_transparent = False
+
+    # soft bluish sky fill
+    world = scene.world or bpy.data.worlds.new("World")
+    scene.world = world
+    world.use_nodes = True
+    bg = world.node_tree.nodes.get('Background')
+    if bg:
+        bg.inputs[0].default_value = (0.85, 0.90, 0.96, 1.0)
+        bg.inputs[1].default_value = 0.7
+
+    # warm sun key
+    sun = bpy.data.objects.get("BeautySun")
+    if sun is None:
+        sun_data = bpy.data.lights.new("BeautySun", 'SUN')
+        sun = bpy.data.objects.new("BeautySun", sun_data)
+        bpy.context.collection.objects.link(sun)
+    sun.data.energy = 3.5
+    sun.data.angle = 0.2
+    sun.data.color = (1.0, 0.95, 0.85)
+    d = mathutils.Vector(sun_dir).normalized()
+    sun.rotation_euler = d.to_track_quat('-Z', 'Y').to_euler()
+
+    cam = _ensure_camera()
+    paths = []
+    for label, direction in {"hero": (1, -1, 0.55), "rear": (-1, 1, 0.45)}.items():
+        _frame(cam, target, direction, ortho=False)
+        scene.render.filepath = f"{OUT}/{name}_{label}.png"
+        bpy.ops.render.render(write_still=True)
+        paths.append(scene.render.filepath)
+    print("Beauty renders:")
+    for p in paths:
+        print("  " + p)
+    return paths

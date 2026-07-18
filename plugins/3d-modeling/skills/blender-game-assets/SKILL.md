@@ -29,7 +29,9 @@ The reference files are the core of the modeling capability — load and use the
 |---|---|
 | `references/modeling-recipes.py` | Executable bpy/bmesh construction ops: box, cylinder, extrude, inset, bevel, loop cut, bridge, lathe/spin, mirror/array/solidify modifiers, measurement helpers. **Paste these into `execute_blender_code`.** |
 | `references/goal-to-technique.md` | "What you want to make → which technique" map, real-scale table, hard-surface vs organic fork, the block-out method. |
-| `references/topology-and-critique.py` | Reference-image setup, real-scale matching, multi-view render (`render_turntable`), and the `critique()` checklist. |
+| `references/topology-and-critique.py` | Reference-image setup, real-scale matching, multi-view render (`render_turntable`), the `critique()` checklist, and `render_beauty()` (Cycles CPU presentation shots). |
+| `references/palette-texturing.py` | The low-poly "color map" workflow, executable: build a 64px palette atlas (flat cells + gradient strips), one shared material, collapse-UV painting (`paint_flat`/`paint_gradient`). One texture = one draw call for the whole set. |
+| `references/style-guide.md` | Aesthetic harmony rules: palette construction, value hierarchy, the gradient trick, mesh-beauty criteria, performance numbers, diorama composition checklist. |
 
 ---
 
@@ -192,6 +194,29 @@ the checklist (silhouette, form, topology, budget, scale). Fix what fails and
 re-render. Two clean passes = done.
 
 ---
+
+## Palette-Atlas Texturing (the low-poly color map)
+
+The default texturing path for stylized low-poly sets — before reaching for
+PolyHaven or baking. Full workflow in `references/palette-texturing.py`, color
+rules in `references/style-guide.md`.
+
+1. Design ONE palette for the whole set (8 flat colors + up to 4 gradients),
+   following the value-hierarchy rules in the style guide.
+2. `build_palette()` → 64px atlas PNG · `palette_material()` → one shared
+   material · `assign_material()` on every prop.
+3. Paint by collapsing UVs: `paint_flat(obj, polys, cell)` for man-made and
+   small parts; `paint_gradient(obj, polys, strip)` on organic masses (foliage,
+   rocks, walls) — vertical gradient fakes AO/sky light for free.
+4. Select faces with `polys_where(obj, pred)` — polygon centers/normals are in
+   LOCAL coordinates.
+5. Preview with `render_turntable(obj, shading='TEXTURE')`; present with
+   `render_beauty(target)`; critique color with the style-guide checklist
+   (grayscale read, accent budget, value merges).
+
+Why it wins: texel density becomes irrelevant (UVs collapse to cell centers),
+seams are invisible, the whole set is ONE draw call, and recoloring the game is
+repainting a 64px image. Ship the atlas PNG alongside the FBX.
 
 ## Retopology Workflow
 

@@ -36,6 +36,7 @@ The reference files are the core of the modeling capability — load and use the
 | `references/character-lowpoly.md` | Character workflow: heads-based proportions, part construction with joint rings, mandatory eyes, palette split, minimal Python rig with pose bend test. |
 | `references/uv-gradation.py` | The PROFESSIONAL colormap tier (Japanese gradation-atlas workflow): multi-stop ramps with hue-shifted shadows, OPEN rectangular axis-aligned unwraps (`unwrap_cylinder_open`/`unwrap_planar`), island placement onto ramps (`place_island`), UV-hack shading (`shade_shift`), free recolors (`recolor_shift`), and `export_uv_layout` proof images. |
 | `references/shape-language.py` | The Supercell/Riot STYLE tier: form deformers (`taper`, `bulge`, `lean`, `curve`, `squash` + `subdivide_rings`) and the shape rules — nothing straight, exaggerate the signature element, big/medium/small rhythm, tilt for charm, soft toy edges. Order: build → subdivide → deform → unwrap → join. |
+| `references/pbr-maps.py` | PBR map generation: procedural synthesis (`normal_from_image` height→Sobel→normal, `build_rough_metal` per-strip roughness/metallic sheets matching the trim layout) + Cycles bakes (`bake_ao`, `bake_bevel_normal` — rounded edges from a Bevel-node bake at zero triangle cost), `pbr_material` wiring and `ao_multiply_into` (mobile one-sampler trick). |
 
 ---
 
@@ -277,6 +278,21 @@ blender:execute_blender_code(code)
 - Target 1/10th to 1/20th polygon count of high-poly.
 - Avoid poles (5+ edges) near deformation areas.
 - Keep consistent polygon density (texel density).
+
+### Full PBR map sets (see `references/pbr-maps.py`)
+
+For engine-grade materials, pair the color sheet with its siblings sharing the
+SAME UV layout:
+- **Normal**: `normal_from_image(color_sheet)` for procedural sheets (drawn
+  joints/mortar/grain are darker = deeper), or bake from high-poly (below), or
+  `bake_bevel_normal(obj)` — the Bevel-node bake that rounds hard edges of a
+  low-poly mesh for free.
+- **AO**: `bake_ao(obj)` (needs non-overlapping UVs — `smart_project` works
+  headless); ship as a map or `ao_multiply_into` the base color (one sampler
+  on mobile).
+- **Roughness/Metallic**: `build_rough_metal({strip: (rough, metal)})` per trim
+  strip. Wood ~0.85/0 · plaster 0.9/0 · iron 0.45/1 · gold 0.3/1 · glaze 0.25/0.
+- Wire everything with `pbr_material()` (color sRGB, the rest Non-Color).
 
 ### Baking Normal Maps
 ```python

@@ -34,6 +34,7 @@ The reference files are the core of the modeling capability — load and use the
 | `references/style-guide.md` | Aesthetic harmony rules: palette construction, value hierarchy, the gradient trick, mesh-beauty criteria, performance numbers, diorama composition checklist. |
 | `references/trim-sheet.py` | Trim-sheet texturing for modular architecture, executable: procedurally build a 256px sheet of horizontal tiling strips (stone/plaster/beam/planks/shingles/door), one material, and `trim_map()` (U tiles along the strip, V fitted with bleed margin; map pieces axis-aligned, rotate the object after). |
 | `references/character-lowpoly.md` | Character workflow: heads-based proportions, part construction with joint rings, mandatory eyes, palette split, minimal Python rig with pose bend test. |
+| `references/uv-gradation.py` | The PROFESSIONAL colormap tier (Japanese gradation-atlas workflow): multi-stop ramps with hue-shifted shadows, OPEN rectangular axis-aligned unwraps (`unwrap_cylinder_open`/`unwrap_planar`), island placement onto ramps (`place_island`), UV-hack shading (`shade_shift`), free recolors (`recolor_shift`), and `export_uv_layout` proof images. |
 
 ---
 
@@ -219,6 +220,21 @@ rules in `references/style-guide.md`.
 Why it wins: texel density becomes irrelevant (UVs collapse to cell centers),
 seams are invisible, the whole set is ONE draw call, and recoloring the game is
 repainting a 64px image. Ship the atlas PNG alongside the FBX.
+
+**Professional tier — gradation atlas** (`references/uv-gradation.py`): the
+Japanese pro colormap workflow ("hack the UVs"). Instead of collapsing UVs to a
+flat cell, unwrap OPEN rectangular axis-aligned islands (cylinder walls unroll
+into clean rectangles — straight texture lines stay straight), place each
+island onto a multi-stop gradation ramp, then *paint with the UVs*:
+`shade_shift` pushes faces down-ramp for shadow / up-ramp for light (stave
+alternation, foliage under-shadow, crevice AO), `recolor_shift` slides an
+island one ramp column for a free color variant, and symmetric parts overlap
+on the same spot. Ramps carry hue-shifted (cooler, richer) shadows that flat
+cells cannot. Ship `export_uv_layout` PNGs with the asset — open, aligned
+islands sitting on their ramps are the professional deliverable.
+
+Ladder of quality: flat cells (fastest) → gradation atlas (professional) —
+same one-material, one-draw-call economics at every tier.
 
 **For modular architecture, use a trim sheet instead** (`references/trim-sheet.py`):
 horizontal strips of tiling surface detail (stone course, plaster field, timber

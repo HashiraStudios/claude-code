@@ -212,7 +212,7 @@ def spin_lathe(bm, profile_verts, axis=(0, 0, 1), center=(0, 0, 0),
     """Lathe / revolve — the fastest way to make bottles, cups, columns,
     wheels, vases. Draw a profile (a chain of verts in the XZ plane), then spin
     it around `axis`. `steps` controls roundness."""
-    geom = list(profile_verts) + [e for v in profile_verts for e in v.link_edges]
+    geom = list(profile_verts) + list({e for v in profile_verts for e in v.link_edges})
     bmesh.ops.spin(
         bm, geom=geom, cent=Vector(center), axis=Vector(axis),
         dvec=Vector((0, 0, 0)), angle=math.radians(angle_deg),

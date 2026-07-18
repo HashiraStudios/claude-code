@@ -89,10 +89,20 @@ def _frame(cam, target, direction, ortho=True):
 def render_turntable(obj, name="critique", shading='MATCAP'):
     """Render front / right / top / 3-4 perspective views of `obj` to PNGs.
     Then OPEN the PNGs with the file-reading tools and run critique().
-    shading='MATCAP' shows form without material noise (best for judging
-    silhouette + topology); 'MATERIAL' shows the textured result."""
+    shading='MATCAP' shows pure form (best for judging silhouette + topology);
+    'MATERIAL' shows material/vertex colors. Uses the Workbench engine: it is
+    CPU-only and headless-safe (EEVEE needs a GPU context and its enum name
+    varies across Blender versions), and studio shading is the right look for
+    form critique anyway."""
     scene = bpy.context.scene
-    scene.render.engine = 'BLENDER_EEVEE_NEXT' if hasattr(scene, 'eevee') else 'BLENDER_EEVEE'
+    scene.render.engine = 'BLENDER_WORKBENCH'
+    sh = scene.display.shading
+    if shading == 'MATERIAL':
+        sh.light = 'STUDIO'
+        sh.color_type = 'MATERIAL'
+    else:
+        sh.light = 'MATCAP'
+        sh.color_type = 'SINGLE'
     scene.render.resolution_x = scene.render.resolution_y = 1024
     scene.render.film_transparent = True
     cam = _ensure_camera()

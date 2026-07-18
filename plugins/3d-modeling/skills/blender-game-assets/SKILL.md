@@ -32,6 +32,8 @@ The reference files are the core of the modeling capability — load and use the
 | `references/topology-and-critique.py` | Reference-image setup, real-scale matching, multi-view render (`render_turntable`), the `critique()` checklist, and `render_beauty()` (Cycles CPU presentation shots). |
 | `references/palette-texturing.py` | The low-poly "color map" workflow, executable: build a 64px palette atlas (flat cells + gradient strips), one shared material, collapse-UV painting (`paint_flat`/`paint_gradient`). One texture = one draw call for the whole set. |
 | `references/style-guide.md` | Aesthetic harmony rules: palette construction, value hierarchy, the gradient trick, mesh-beauty criteria, performance numbers, diorama composition checklist. |
+| `references/trim-sheet.py` | Trim-sheet texturing for modular architecture, executable: procedurally build a 256px sheet of horizontal tiling strips (stone/plaster/beam/planks/shingles/door), one material, and `trim_map()` (U tiles along the strip, V fitted with bleed margin; map pieces axis-aligned, rotate the object after). |
+| `references/character-lowpoly.md` | Character workflow: heads-based proportions, part construction with joint rings, mandatory eyes, palette split, minimal Python rig with pose bend test. |
 
 ---
 
@@ -217,6 +219,14 @@ rules in `references/style-guide.md`.
 Why it wins: texel density becomes irrelevant (UVs collapse to cell centers),
 seams are invisible, the whole set is ONE draw call, and recoloring the game is
 repainting a 64px image. Ship the atlas PNG alongside the FBX.
+
+**For modular architecture, use a trim sheet instead** (`references/trim-sheet.py`):
+horizontal strips of tiling surface detail (stone course, plaster field, timber
+beam, planks, shingles) on one texture. `trim_map()` tiles U along the strip and
+fits V inside it; map each kit piece while axis-aligned and rotate the object
+afterwards (object transforms don't touch UVs). A typical populated scene ships
+with exactly three materials: environment palette + character palette + trim
+sheet.
 
 ## Retopology Workflow
 

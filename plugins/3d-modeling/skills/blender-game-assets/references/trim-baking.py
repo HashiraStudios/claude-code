@@ -118,20 +118,20 @@ def build_highpoly_trims(seed=11):
                            ((i + 0.5) * period, 0.6875, 0.006 + rng.uniform(-0.002, 0.002)),
                            m, bevel=0.005))
 
-    # ---- shingles: y 0.75 .. 0.875, two overlapping tilted rows ----
+    # ---- shingles: y 0.75 .. 0.875, ONE row of tilted boards ----
+    # (two offset rows created a mid-band seam when a roof slab's V-fit
+    # stretched the strip — the "broken middle" artifact; a single row
+    # stretches cleanly across any slab)
     period = 1 / 7
-    for row in range(2):
-        yc = 0.782 + row * 0.058
-        off = period / 2 if row % 2 else 0
-        x = -period + off
-        n = 0
-        while x < 1.0 + period:
-            m = _flat_mat(f"sh{row}{n}", jit(_hx3('#7E5A44'), 0.12))
-            parts.append(_elem("Shingle", (period - 0.006, 0.085, 0.007),
-                               (x + period / 2, yc, 0.010 + row * 0.004),
-                               m, bevel=0.004, rot_x=math.radians(7)))
-            x += period
-            n += 1
+    x = -period
+    n = 0
+    while x < 1.0 + period:
+        m = _flat_mat(f"sh{n}", jit(_hx3('#7E5A44'), 0.12))
+        parts.append(_elem("Shingle", (period - 0.006, 0.118, 0.008),
+                           (x + period / 2, 0.8125, 0.010),
+                           m, bevel=0.005, rot_x=math.radians(5)))
+        x += period
+        n += 1
 
     # ---- door planks: y 0.875 .. 1.0, tight dark planks ----
     period = 1 / 12
@@ -218,7 +218,18 @@ def bake_trim_sheet(parts, size=512, out_prefix=None, ao_strength=1.1,
         import math as _m
         import random as _r
         rng = _r.Random(23)
-        row_seed = [rng.uniform(0, _m.tau) for _ in range(size)]
+        # smooth value noise (no banding): random grid, cosine-interpolated
+        gsz = 24
+        grid = [[rng.uniform(-1, 1) for _ in range(gsz + 2)] for _ in range(gsz + 2)]
+        def vnoise(fx, fy):
+            gx, gy = fx * gsz, fy * gsz
+            x0, y0 = int(gx), int(gy)
+            tx, ty = gx - x0, gy - y0
+            sx = (1 - _m.cos(tx * _m.pi)) / 2
+            sy = (1 - _m.cos(ty * _m.pi)) / 2
+            a = grid[y0][x0] * (1 - sx) + grid[y0][x0 + 1] * sx
+            b = grid[y0 + 1][x0] * (1 - sx) + grid[y0 + 1][x0 + 1] * sx
+            return a * (1 - sy) + b * sy
         for y in range(size):
             for x in range(size):
                 idx = y * size + x
@@ -236,9 +247,9 @@ def bake_trim_sheet(parts, size=512, out_prefix=None, ao_strength=1.1,
                     f *= 0.80
                     cpx[i4 + 2] = min(1.0, cpx[i4 + 2] * 1.04)
                 # directional grain: WOOD bands only (v >= 0.5 in our layout) —
-                # plaster and stone must stay streak-free
+                # smooth anisotropic noise (stretched along U), never banded sine
                 if y >= size // 2:
-                    f *= 1.0 + 0.045 * _m.sin(x * 0.55 + row_seed[(y // 3) % size])
+                    f *= 1.0 + 0.05 * vnoise((x / size) * 3.0 % 1.0, (y / size) * 14.0 % 1.0)
                 for c in range(3):
                     cpx[i4 + c] = max(0.0, min(1.0, cpx[i4 + c] * f))
 

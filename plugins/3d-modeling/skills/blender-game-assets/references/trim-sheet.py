@@ -300,7 +300,10 @@ def cover_ring(obj, z_local, height=0.09, outset=0.035, strip='beam',
     import bmesh as _bm
     import math as _m
     from mathutils import Vector
-    mesh = obj.data
+    bpy.context.view_layer.update()   # matrix_world is STALE after scripted
+    mesh = obj.data                   # location changes until the depsgraph
+                                      # runs — without this the ring lands at
+                                      # the un-offset position
 
     def r_at(z):
         tol, best = 0.06, []

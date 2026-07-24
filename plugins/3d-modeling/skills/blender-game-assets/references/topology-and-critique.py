@@ -161,6 +161,16 @@ TOPOLOGY (wireframe / stats via report())
   [ ] Poles and n-gons only on flat, non-deforming areas?
   [ ] Even density where texel density must be even?
 
+STRUCTURAL LOGIC (proximity checks can't catch fake structure)
+  [ ] Would this assembly hold together physically? Every piece is either
+      CONTINUOUS with its neighbor (same shell), FASTENED to it (strap,
+      rivet, knot — shown), or RESTING on it (gravity makes sense).
+  [ ] Anything that is ONE physical piece in reality (a leather cap and
+      its ear flaps, a jug and its spout) is ONE continuous surface in 3D
+      — carve extensions from the parent shell (angular-sector tabs on a
+      sphere, etc.), never attach a parallel plate: offset plates read as
+      broken shingles from the side, even when every attach probe passes.
+
 CONNECTIONS (the class of error the eye misses in full-frame renders)
   [ ] Every connector (rope/tube/pipe/strut) endpoint verified with
       assert_attached() against the geometry it claims to touch — BOTH ends.

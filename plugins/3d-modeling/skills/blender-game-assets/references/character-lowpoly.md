@@ -32,9 +32,15 @@ mesh (no welding needed; shells hide inside neighbors):
   joint collapses when bent; with it, the bend reads clean even rigid-skinned.
 - **Hands**: mitt boxes (no fingers below hero tier). **Feet**: boxes shifted
   forward, beveled.
-- **Eyes are mandatory**: two small dark boxes slightly proud of the face
-  (~0.03 × 0.014 × 0.05 m). Without them the head has no front and the
-  character has no charm — this is the single highest-value detail per triangle.
+- **FACE IDENTITY — the front must WIN** (ground truth from the KayKit
+  Adventurers CC0 kit, github.com/KayKit-Game-Assets): the face needs BIG
+  dark oval eyes (~1/5 of head width EACH, tall ellipses, wide apart, at
+  the vertical middle of the face), a protruding NOSE wedge, and a brow
+  line (helmet edge / goggle strap / hair fringe). Tiny eyes lose to any
+  strong back feature (hair patch, hood, scarf) and the character reads
+  as facing BACKWARDS ("face on the nape"). KayKit numbers: ~2.5 heads
+  tall, head BIGGER than the torso (head 1.09 vs body 0.92 on the
+  Knight), no neck, stubby limbs, big hands/boots.
 - Join everything (`object.join`) AFTER painting each part (UVs survive joins;
   z-predicates are in each part's LOCAL space before the join).
 
@@ -73,11 +79,24 @@ bone('forearm.L', (0.21, 0, 0.88), (0.21, 0, 0.58), 'arm.L')
 bpy.ops.object.mode_set(mode='OBJECT')
 ```
 
-Skinning: try automatic weights first —
-`bpy.ops.object.parent_set(type='ARMATURE_AUTO')` (mesh selected, armature
-active). If Bone-Heat fails on disjoint shells, fall back to **rigid per-part
-weights** (each vertex → nearest bone, weight 1.0): deterministic, and the
-standard look for hyper-casual anyway.
+Skinning — **explicit per-part bone groups, declared BEFORE the join**:
+right after building each part, create a vertex group named for its bone
+and assign all its verts (split limbs at the joint ring by local z). Vertex
+groups merge by name on join; then `parent_set(type='ARMATURE_NAME')`.
+Deterministic, no tearing, the standard hyper-casual look.
+
+Do NOT trust `ARMATURE_AUTO`: bone heat can "succeed" while assigning
+NOTHING (silent total failure on overlapping chibi shells — verified: op
+reported OK with 456/456 vertices empty). And per-vertex nearest-bone on
+the JOINED mesh tears shells apart (shoulder verts ride the arm bone).
+ALWAYS verify programmatically after any skinning path:
+
+```python
+empty = [v for v in body.data.vertices
+         if not v.groups or all(g.weight < 1e-4 for g in v.groups)]
+print(f"weight check: {len(empty)}/{len(body.data.vertices)} empty")
+# fallback for stragglers: rigid nearest-bone per vertex
+```
 
 **ALWAYS run a weight-repair pass after auto weights**: bone heat is
 unreliable on tiny disconnected accessory shells — an eye or goggle lens

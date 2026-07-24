@@ -144,6 +144,16 @@ Probe design note: an attachment probe must sit ON the accessory's
 contact surface, not at the anchor's center (a center probe measures
 "how deep inside", which fails at any tolerance and means nothing).
 
+**Parts must CHAIN, not stack** (the "empilhado" failure): every piece
+declares what it connects to, and the geometry expresses it — the flap's
+top edge tucks UNDER the dome rim (overlap, not adjacency), the strap is
+a torus whose tube intersects the dome surface (a constant-radius band
+around a curved dome floats), goggle rims interpenetrate the strap.
+And FIT TO MEASURED ANATOMY: probe the feature you must cover first
+(ear verts: |x|max region → its y/z box) and assert coverage in code —
+`flap z-range ⊇ ear z-range` — the eyeballed flap missed the ears by
+half their height.
+
 ## Accessorizing an existing rigged base (the KayKit workflow)
 
 Building gear for a professional CC0 base (KayKit & co.) is faster than

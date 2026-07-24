@@ -171,7 +171,9 @@ recipe:
 
 1. **Measure the target, never eyeball**: import the GLB, print the bbox
    of the anchor mesh (head, hand) and the bone heads/tails — all sizes
-   derive from those numbers.
+   derive from those numbers. And probe AT THE MOUNT HEIGHT: a global
+   extreme (deepest back point) lies about the local surface — the back
+   curves, so a plate placed at global ymax floats at plate height.
 2. Build accessories with our normal recipes + own palette material,
    FITTED to the measurements (dome cap = hemisphere shell + solidify;
    goggles BELOW the cap edge or the dome swallows them).

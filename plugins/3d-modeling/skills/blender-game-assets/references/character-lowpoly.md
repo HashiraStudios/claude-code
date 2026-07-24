@@ -144,6 +144,15 @@ Probe design note: an attachment probe must sit ON the accessory's
 contact surface, not at the anchor's center (a center probe measures
 "how deep inside", which fails at any tolerance and means nothing).
 
+**A covering shell must be solved against the covered surface's MEASURED
+profile**: bin the anchor mesh's top surface by horizontal radius
+(`max z per ρ ring`) and choose the shell's radius/center/squash so the
+inner surface clears every ring. A sphere sized to hug the SIDES of a
+flat-topped head intersects its crown — the anchor pokes through and
+reads as a texture error (pink patch on the cap). Verify with a
+clearance probe at the crown, then conform surface details (seam
+ridges) to the shell equation, never as floating straight boxes.
+
 **Parts must CHAIN, not stack** (the "empilhado" failure): every piece
 declares what it connects to, and the geometry expresses it — the flap's
 top edge tucks UNDER the dome rim (overlap, not adjacency), the strap is

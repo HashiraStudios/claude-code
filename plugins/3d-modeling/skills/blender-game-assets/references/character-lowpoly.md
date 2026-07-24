@@ -121,6 +121,29 @@ then `render_turntable` + `render_beauty`. PASS = joints bend without the
 mesh collapsing or shells popping visibly. Reset pose before FBX export
 (`bake_anim=False`, armature included; engine retargets from there).
 
+## CONCEPT-FIRST accessory pipeline (the professional order of operations)
+
+Modeling an accessory straight from imagination produces "esquisito" —
+design it FIRST, model against the design. Validated end-to-end flow:
+
+1. **Render the base** (clean textured front ortho, white background).
+2. **Concept ON the character**: image-EDIT endpoint (`gpt-image-1`,
+   `/v1/images/edits`, image = the render): "dress this character with
+   <accessory>, keep character/style/camera unchanged". The generator
+   designs proportions, materials and details in context.
+3. **Isolate as a model sheet**: second edit call on the concept:
+   "ONLY the accessory, no character, two orthographic views side by
+   side (front | side), flat white background". This is the blueprint.
+4. **Model against the views**: read shape facts off the sheet (dome
+   wraps the skull and opens a face arch; flaps taper and flare; rims
+   are ~25% of lens radius...) and build with the normal recipes.
+   Compare renders to the sheet each critique pass.
+5. Fit to measurements, `assert_attached`, bone-parent, pose test.
+
+Probe design note: an attachment probe must sit ON the accessory's
+contact surface, not at the anchor's center (a center probe measures
+"how deep inside", which fails at any tolerance and means nothing).
+
 ## Accessorizing an existing rigged base (the KayKit workflow)
 
 Building gear for a professional CC0 base (KayKit & co.) is faster than

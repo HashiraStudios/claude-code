@@ -277,7 +277,14 @@ def trim_map_around(obj, poly_indices, strip, density=1.0, margin_px=2,
         for li, vi in zip(p.loop_indices, p.vertices):
             co = obj.data.vertices[vi].co
             t = ((co[ai] - fmn) / fspan) if fit == 'face' else ((co[ai] - mn) / span)
-            uv.data[li].uv = (thetas[vi] * r_avg * density, v0 + t * (v1 - v0))
+            # PER-VERTEX radius (blended toward the mean) — a tapered tower
+            # mapped with one flat r_avg compresses the texture at the wide
+            # end and stretches it at the narrow end (distorted bricks).
+            # U = theta x local radius is the developable-cone unwrap; the
+            # 70/30 blend keeps horizontal courses from fanning too hard on
+            # extreme tapers while killing most of the stretch.
+            rv = _m.hypot(co[bi], co[ci]) * 0.7 + r_avg * 0.3
+            uv.data[li].uv = (thetas[vi] * rv * density, v0 + t * (v1 - v0))
 
 
 # ---------------------------------------------------------------------------

@@ -16,6 +16,20 @@ DIVISION OF LABOR
 
 PROMPTS (per material, tuned for hand-painted trim use — generate at 1024,
 1:1, then downscale; ask for edge-to-edge flat texture, no perspective):
+
+  !! ONE PALETTE PER ASSET — the stiffness killer. Generating each material
+  with its own implicit palette produces strips that never harmonize. Every
+  prompt for one asset must share the SAME art-direction sentence:
+    "ART DIRECTION: unified storybook palette of honey-ochre wood, warm
+     cream plaster, terracotta and sage-teal accents; shadows are never
+     gray or black, they shift toward saturated cool violet; highlights
+     are warm and sun-kissed like color dodge; every element carries a
+     soft painted gradient inside it (darker at its base, lighter on top);
+     subtle hue variation everywhere so no two elements are the same
+     color; loose confident brushwork, big readable shapes, painterly and
+     soft, never mechanical or uniform"
+  Then finish the pipeline with art-direction.py: stylize_grade() on the
+  assembled sheet + vertex_gradient/vertex_ao/apply_grade on the objects.
   wood     "seamless tileable hand-painted stylized game texture, vertical
             wooden planks, warm brown, per-plank value variation, painted
             bright edge highlights, soft brush-stroke grain, subtle cracks,

@@ -40,7 +40,8 @@ The reference files are the core of the modeling capability — load and use the
 | `references/trim-baking.py` | THE pro trim-sheet practice: model the trim details as real high-poly 3D strips (beveled planks, stone courses, overlapping shingles — periodic in X so U tiles), then bake color/normal/AO down to the sheet. Uses a deterministic RAYCAST bake (per-texel `scene.ray_cast`: exact face normals, hit material albedo, horizon-based AO from the height field) — headless-proof where Cycles selected-to-active is not. Always prefer this over drawn sheets. |
 | `references/painted-bake.py` | The Supercell character-texture practice (Creature Shop / Airborn pipeline: all lighting painted INTO the diffuse — the shipped character is ~unlit): `painted_bake(obj, palette)` adds a unique BakeUV layer, rasterizes exact per-face albedo (never bake collapsed-UV colors — filter footprints and AA both corrupt them), self-bakes AO + object normals + position, and composes albedo × AO × height-gradient × warm-light/cool-shadow + painted spec into one diffuse texture. Bake light direction must MATCH the presentation key light. |
 | `references/analyze-kit.py` | Learn from reference assets NUMERICALLY: `analyze_kit(dir)` ingests FBX/OBJ/GLB kits (e.g. a Supercell Make base character) and reports mesh stats (quad mix, smooth shading), armature bone lengths (→ exact head-proportion ratios), UV coverage/collapsed/overlap stats + layout renders over the texture, and texture forensics (dominant palette, mean saturation/value, vertical painted-light gradient). Run it on every pro kit you can obtain, then correct our recipes against the ground truth. |
-| `references/ai-textures.py` | The TOP texturing tier: source painted surfaces from an image generator (per-material prompt templates included, validated with gpt-image-1) and let the pipeline do what generators can't — `make_tileable` (crossfade wrap; also where AI tiles are DARKEST, see the cap rule in trim_map), `assemble_trim` (resample per-material sources into the STRIPS bands), then normal/rough derivation and the trim mapping system. Division of labor: generator paints, pipeline engineers. |
+| `references/ai-textures.py` | The TOP texturing tier: source painted surfaces from an image generator (per-material prompt templates included, validated with gpt-image-1) and let the pipeline do what generators can't — `make_tileable` (crossfade wrap; also where AI tiles are DARKEST, see the cap rule in trim_map), `assemble_trim` (resample per-material sources into the STRIPS bands), then normal/rough derivation and the trim mapping system. Division of labor: generator paints, pipeline engineers. TWO PROMPT LAWS learned in testing: every material of one asset must share ONE art-direction sentence (palette + shadow/highlight color rules) or the strips never harmonize; and rich prompts make generators invent windows/doors/beams INSIDE material swatches — always append the explicit architectural-feature ban. |
+| `references/art-direction.py` | The ANTI-STIFFNESS pass (Blizzard/Riot school, mandatory on every finished asset): `stylize_grade(sheet)` — saturated violet-shifted shadows (never gray, never black), warm dodge highlights, low-frequency hue vibration, applied to the assembled sheet BEFORE deriving normal/rough; then `grade_object(obj)` after join — macro value gradient (dark saturated base → warm lifted top) plus colored-vertex AO, stored in a "Grade" vertex-color attribute and multiplied over Base Color, so it rides on top of trim UVs without touching the mapping (the texture repeats; the grade doesn't). |
 
 ---
 
@@ -246,6 +247,12 @@ surfaces** (`ai-textures.py`, the current top: generator paints the surface,
 pipeline handles tiling/assembly/derived maps/mapping). Procedural synthesis
 has a hard quality ceiling — when an image generator is reachable, use tier 4
 for every visible surface and keep the lower tiers for blockouts and fallbacks.
+
+Whatever the tier, finish with the art-direction pass (`art-direction.py`) —
+a technically correct sheet still reads STIFF until shadows are saturated and
+hue-shifted, highlights drift warm, hue vibrates at low frequency across the
+surface, and the whole asset carries a macro value gradient toward the ground.
+Those four rules are what separate "textured" from "painted".
 
 **For modular architecture, use a trim sheet instead** (`references/trim-sheet.py`):
 horizontal strips of tiling surface detail (stone course, plaster field, timber

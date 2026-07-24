@@ -313,3 +313,34 @@ def report(obj):
     quads = sum(1 for p in obj.data.polygons if len(p.vertices) == 4)
     print(f"{obj.name}: dims={dimensions(obj)} m | tris(final)={tri_count(obj)} "
           f"| quads={quads} tris={tris} ngons={ngons} | scale={tuple(obj.scale)}")
+
+
+# ---------------------------------------------------------------------------
+# CONNECTION VALIDATION — hand-typed coordinates are a lie until proven
+# ---------------------------------------------------------------------------
+# A connector (rope, tube, pipe, strut) whose endpoint was typed by hand WILL
+# eventually float in mid-air; a render viewed full-frame hides it. Every
+# connector endpoint must be CHECKED against the geometry it claims to touch.
+
+def surface_distance(obj, point):
+    """Distance from world-space `point` to obj's surface (BVH nearest)."""
+    import mathutils.bvhtree
+    dg = bpy.context.evaluated_depsgraph_get()
+    bvh = mathutils.bvhtree.BVHTree.FromObject(obj, dg)
+    loc, nrm, idx, dist = bvh.find_nearest(
+        obj.matrix_world.inverted() @ mathutils.Vector(point))
+    if loc is None:
+        return float('inf')
+    return (obj.matrix_world @ loc - mathutils.Vector(point)).length
+
+
+def assert_attached(target, point, tol=0.04, label=""):
+    """Fail loudly when a connector endpoint does not land on `target`.
+    Call for BOTH ends of every rope/tube/pipe BEFORE rendering — this is
+    the check that catches floating connectors the eye misses."""
+    d = surface_distance(target, point)
+    ok = d <= tol
+    print(f"[ATTACH {'OK  ' if ok else 'FAIL'}] {label or target.name}: "
+          f"endpoint {tuple(round(c, 3) for c in point)} is {d:.3f}m from "
+          f"{target.name} (tol {tol})")
+    return ok

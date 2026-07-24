@@ -154,6 +154,18 @@ TOPOLOGY (wireframe / stats via report())
   [ ] Poles and n-gons only on flat, non-deforming areas?
   [ ] Even density where texel density must be even?
 
+CONNECTIONS (the class of error the eye misses in full-frame renders)
+  [ ] Every connector (rope/tube/pipe/strut) endpoint verified with
+      assert_attached() against the geometry it claims to touch — BOTH ends.
+      Hand-typed endpoint coordinates are a lie until proven.
+  [ ] Zoom pass: inspect at least one CLOSE crop of each joint cluster —
+      full-frame renders hide floating endpoints and small gaps.
+
+MATERIAL SEMANTICS
+  [ ] Every surface wears a material that IS that surface (roof boards are
+      not balloon fabric; stone is not burlap). If the semantic material
+      doesn't exist in the set, GENERATE it — never substitute a lookalike.
+
 BUDGET & SCALE
   [ ] tri_count within the platform budget (see SKILL.md)?
   [ ] dimensions() match the real-world target?
@@ -161,6 +173,8 @@ BUDGET & SCALE
 
 If any box fails, FIX it and re-render. Two clean passes = done. One pass is
 never enough — the second pass is what separates built from generated.
+A defect you can SEE in the render is a defect — "invisible at game
+distance" is not an acceptance criterion, it is an excuse.
 """
 
 

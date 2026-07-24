@@ -110,10 +110,27 @@ shadow-color / highlight-color sentence for all materials of an asset
 grade adds the macro read. Sources: Blizzard artist writeups (Matt McDaid),
 polycount hand-painted threads, Emilie Stabell / Windy Games tutorials.
 
+## Seam covers: no raw material transitions
+
+Where two tiling textures meet on one surface (stone course → plaster
+field) or two walls intersect, the raw seam always reads broken. The kit
+rule: cover EVERY transition with dedicated trim geometry, mapped to a
+wood/beam strip of the same sheet —
+
+- **Molding ring** around towers at each band change (`cover_ring`, samples
+  the mesh radius so it follows tapers/bulges) and near the ground.
+- **L-profile corner pillar** wrapping the outside of perpendicular wall
+  intersections (`cover_corner`) — the classic modular-kit corner piece.
+- **Baseboard / cornice boxes** along straight wall seams and wall tops.
+
+Cost is a handful of tris; the payoff is double: the seam disappears AND
+the silhouette gains structure. Transitions become features.
+
 ## Composition checklist for a prop set / diorama
 
 - [ ] All props share the single palette atlas (1 material).
 - [ ] Scene reads in grayscale (value hierarchy).
+- [ ] No raw material transitions — every seam wears a cover trim.
 - [ ] One accent color, used in ≤ 2 places.
 - [ ] Gradients on organic masses, flats on small/man-made parts.
 - [ ] Consistent segment counts and bevel widths across the set.

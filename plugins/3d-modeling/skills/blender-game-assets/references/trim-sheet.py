@@ -278,3 +278,91 @@ def trim_map_around(obj, poly_indices, strip, density=1.0, margin_px=2,
             co = obj.data.vertices[vi].co
             t = ((co[ai] - fmn) / fspan) if fit == 'face' else ((co[ai] - mn) / span)
             uv.data[li].uv = (thetas[vi] * r_avg * density, v0 + t * (v1 - v0))
+
+
+# ---------------------------------------------------------------------------
+# SEAM COVERS — never let two tiling materials meet raw
+# ---------------------------------------------------------------------------
+# Where two texture bands touch (stone course -> plaster field) or two walls
+# intersect, the raw seam reads broken/dirty. The kit-design answer (heavily
+# used by stylized studios): cover EVERY material transition and EVERY
+# perpendicular intersection with a dedicated trim piece — a molding ring on
+# a tower, an L-profile corner pillar on wall intersections, a baseboard box
+# along a wall seam. The cover hides the seam AND adds style; transitions
+# become features instead of defects.
+
+def cover_ring(obj, z_local, height=0.09, outset=0.035, strip='beam',
+               density=1.0, segments=18):
+    """Molding ring hugging `obj` (a vertical tower/cylinder, own local
+    coords) at local height `z_local` — use at every texture-band seam.
+    Radius is SAMPLED from the mesh at both ring edges, so it follows
+    tapered/bulged towers. Returns the ring object (same trim strip)."""
+    import bmesh as _bm
+    import math as _m
+    from mathutils import Vector
+    mesh = obj.data
+
+    def r_at(z):
+        tol, best = 0.06, []
+        while not best and tol < 2.0:
+            best = [_m.hypot(v.co.x, v.co.y) for v in mesh.vertices
+                    if abs(v.co.z - z) < tol]
+            tol *= 2
+        return max(best) if best else 0.5
+
+    r0 = r_at(z_local - height / 2) + outset
+    r1 = r_at(z_local + height / 2) + outset
+    bm = _bm.new()
+    for zi, rr in ((-height / 2, r0), (height / 2, r1)):
+        for k in range(segments):
+            th = k / segments * 2 * _m.pi
+            bm.verts.new((rr * _m.cos(th), rr * _m.sin(th), zi))
+    bm.verts.ensure_lookup_table()
+    for k in range(segments):
+        k2 = (k + 1) % segments
+        bm.faces.new((bm.verts[k], bm.verts[k2],
+                      bm.verts[segments + k2], bm.verts[segments + k]))
+    _bm.ops.recalc_face_normals(bm, faces=bm.faces)
+    me = bpy.data.meshes.new(obj.name + "Ring")
+    bm.to_mesh(me)
+    bm.free()
+    ring = bpy.data.objects.new(obj.name + "Ring", me)
+    bpy.context.collection.objects.link(ring)
+    ring.matrix_world = obj.matrix_world
+    ring.location = obj.matrix_world @ Vector((0, 0, z_local))
+    for m in obj.data.materials:
+        ring.data.materials.append(m)
+    trim_map_around(ring, list(range(len(ring.data.polygons))), strip,
+                    density=density)
+    return ring
+
+
+def cover_corner(name, height=1.0, arm=0.16, thick=0.06, location=(0, 0, 0),
+                 rot_z=0.0, strip='beam', density=1.2):
+    """L-profile pillar covering the OUTSIDE of two perpendicular walls'
+    intersection (the corner-seam cover). Assumes the walls occupy the
+    +x/+y quadrant with their OUTER faces on the x=0 and y=0 planes; the
+    pillar wraps the corner edge from outside, one arm over each face
+    (rotate with rot_z, then position). Map first, rotate after —
+    handled internally. Returns the pillar."""
+    import bmesh as _bm
+    pts = [(0, 0), (0, arm), (-thick, arm), (-thick, -thick),
+           (arm, -thick), (arm, 0)]
+    bm = _bm.new()
+    bot = [bm.verts.new((x, y, 0)) for x, y in pts]
+    top = [bm.verts.new((x, y, height)) for x, y in pts]
+    bm.faces.new(bot[::-1])
+    bm.faces.new(top)
+    for k in range(len(pts)):
+        k2 = (k + 1) % len(pts)
+        bm.faces.new((bot[k], bot[k2], top[k2], top[k]))
+    _bm.ops.recalc_face_normals(bm, faces=bm.faces)
+    me = bpy.data.meshes.new(name)
+    bm.to_mesh(me)
+    bm.free()
+    ob = bpy.data.objects.new(name, me)
+    bpy.context.collection.objects.link(ob)
+    trim_map(ob, list(range(len(ob.data.polygons))), strip, density=density)
+    ob.rotation_euler = (0, 0, rot_z)
+    ob.location = location
+    return ob

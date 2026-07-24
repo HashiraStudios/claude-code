@@ -176,6 +176,9 @@ def trim_map(obj, poly_indices, strip, density=1.0, margin_px=2, fit='selection'
     v0, v1 = _strip_band(strip, margin_px)
 
     polys = [obj.data.polygons[i] for i in poly_indices]
+    if not polys:
+        print(f"trim_map('{strip}'): EMPTY selection — check your predicate")
+        return
     spans = []
     for p in polys:
         a = max(range(3), key=lambda i: abs(p.normal[i]))
@@ -247,6 +250,10 @@ def trim_map_around(obj, poly_indices, strip, density=1.0, margin_px=2,
     ai = {'X': 0, 'Y': 1, 'Z': 2}[axis]
     bi, ci = (ai + 1) % 3, (ai + 2) % 3
     polys = [obj.data.polygons[i] for i in poly_indices]
+    if not polys:
+        print(f"trim_map_around('{strip}'): EMPTY selection — check your "
+              f"band predicate against actual face-center coordinates")
+        return
     rs, vcs = [], []
     for p in polys:
         for vi in p.vertices:

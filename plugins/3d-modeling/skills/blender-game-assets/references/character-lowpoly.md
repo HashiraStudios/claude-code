@@ -121,6 +121,29 @@ then `render_turntable` + `render_beauty`. PASS = joints bend without the
 mesh collapsing or shells popping visibly. Reset pose before FBX export
 (`bake_anim=False`, armature included; engine retargets from there).
 
+## Accessorizing an existing rigged base (the KayKit workflow)
+
+Building gear for a professional CC0 base (KayKit & co.) is faster than
+building the whole character, and it's how studios ship skins. Validated
+recipe:
+
+1. **Measure the target, never eyeball**: import the GLB, print the bbox
+   of the anchor mesh (head, hand) and the bone heads/tails — all sizes
+   derive from those numbers.
+2. Build accessories with our normal recipes + own palette material,
+   FITTED to the measurements (dome cap = hemisphere shell + solidify;
+   goggles BELOW the cap edge or the dome swallows them).
+3. `assert_attached()` every piece against its anchor mesh.
+4. Join per anchor (head kit / chest kit) and parent to the BONE:
+   ```python
+   obj.parent, obj.parent_type, obj.parent_bone = arm, 'BONE', 'head'
+   frame = arm.matrix_world @ b.matrix_local @ Matrix.Translation((0, b.length, 0))
+   obj.matrix_parent_inverse = frame.inverted()   # bone frame is at the TAIL
+   ```
+   (KayKit even ships slot bones — `handslot.l/r` — for weapons.)
+5. **Pose test is the proof**: rotate the anchor bone and render — the
+   kit must follow. A kit that only looks right in rest pose is untested.
+
 ## Character critique additions
 
 On top of the standard checklist:

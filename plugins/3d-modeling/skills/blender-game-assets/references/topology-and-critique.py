@@ -73,6 +73,9 @@ def _ensure_camera():
 
 def _frame(cam, target, direction, ortho=True):
     """Point an orthographic camera at `target` from a unit `direction`."""
+    bpy.context.view_layer.update()   # matrix_world is STALE for objects
+                                      # created/moved this script — without
+                                      # this the camera aims at the origin
     bb = [target.matrix_world @ Vector(c) for c in target.bound_box]
     center = sum(bb, Vector()) / 8
     radius = max((v - center).length for v in bb)

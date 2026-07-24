@@ -42,6 +42,7 @@ Use `dimensions(obj)` after blockout and correct before detailing.
 | Wall section, floor, modular kit piece | **Trim / tileable** | `add_box` to grid size → align UVs to a trim sheet | Snap dims to a power-of-two grid (0.5/1/2 m). |
 | Rock, log, terrain chunk, debris | **Organic hard edges** | `add_box` → `subdivide_smooth` → sculpt/randomize → `bevel` | Triangles OK; no deformation here. |
 | Character, creature, hand, face | **Organic deforming** | blockout primitives → `add_mirror` → `loop_cut` at joints → retopo quads | See hard-surface-vs-organic below; edge loops follow muscle flow. |
+| Fender, arch, vault, half-pipe, awning | **Arc shell** | `add_cylinder(cap=False)` → delete all faces below an arc cutoff → `add_solidify` → `trim_map_around` | Filter by the coord that becomes "up" AFTER the placement rotation (e.g. local **Y** for a wheel-style 90° X-rotation) — never by the axial coord: every side face sits at axial center 0 and the whole shell deletes. Map before rotating. |
 | Foliage, leaf, blade, cloth card | **Card / plane** | plane → `add_solidify` (thin) → alpha texture | Keep 2-sided or disable backface cull in engine. |
 | Scattered grass/rocks/props over a surface | **Procedural** | Geometry Nodes scatter (see SKILL.md) | Bake to mesh before export. |
 

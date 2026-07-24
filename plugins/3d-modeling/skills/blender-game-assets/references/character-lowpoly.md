@@ -79,6 +79,24 @@ active). If Bone-Heat fails on disjoint shells, fall back to **rigid per-part
 weights** (each vertex → nearest bone, weight 1.0): deterministic, and the
 standard look for hyper-casual anyway.
 
+**ALWAYS run a weight-repair pass after auto weights**: bone heat is
+unreliable on tiny disconnected accessory shells — an eye or goggle lens
+partially weighted to an arm bone stays put in T-pose and RIDES AWAY with
+the first pose (the bug only shows posed, which is why it slips through
+T-pose review). Force accessory shells to their anatomical bone:
+
+```python
+hg = body.vertex_groups.get('head')
+for v in body.data.vertices:
+    if v.co.z > neck_top_z:          # everything above the neck = head
+        for g in list(v.groups):
+            body.vertex_groups[body.vertex_groups[g.group].name].remove([v.index])
+        hg.add([v.index], 1.0, 'REPLACE')
+```
+
+And pose-test EVERY accessory: the bend test isn't just for joints — it is
+what exposes bad accessory weights.
+
 Pose test: rotate `arm.L/R` and `thigh.L/R` ±20–30°, bend a knee/elbow ring,
 then `render_turntable` + `render_beauty`. PASS = joints bend without the
 mesh collapsing or shells popping visibly. Reset pose before FBX export

@@ -82,9 +82,13 @@ def _frame(cam, target, direction, ortho=True):
         cam.location = center + d * radius * 4
         cam.data.ortho_scale = radius * 2.4
     else:
-        # tight portfolio framing: longer lens, closer in
+        # tight portfolio framing: longer lens, closer in — but NEVER crop:
+        # at 58mm the half-FOV is atan(18/58)≈17°, so tall objects need
+        # distance ≥ radius/tan(halfFOV); 2.75x radius alone crops heads off
         cam.data.lens = 58
-        cam.location = center + d * radius * 2.75
+        half_fov = math.atan(18 / cam.data.lens)
+        dist = max(radius * 2.75, radius / math.tan(half_fov) * 1.06)
+        cam.location = center + d * dist
     look = (center - cam.location).normalized()
     cam.rotation_euler = look.to_track_quat('-Z', 'Y').to_euler()
 

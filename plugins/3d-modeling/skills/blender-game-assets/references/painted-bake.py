@@ -130,10 +130,18 @@ def painted_bake(obj, palette_img, size=512, samples=32,
             for xx in range(x0, x1 + 1):
                 w0 = ((by - cy) * (xx + 0.5 - cx) + (cx - bx) * (yy + 0.5 - cy)) / d
                 w1 = ((cy - ay) * (xx + 0.5 - cx) + (ax - cx) * (yy + 0.5 - cy)) / d
-                if w0 >= -0.10 and w1 >= -0.10 and (1 - w0 - w1) >= -0.10:  # ~1px outset kills seam gutters
-                    i4 = (yy * size + xx) * 4
-                    A[i4:i4 + 3] = col
-                    A[i4 + 3] = 1.0
+                w2 = 1 - w0 - w1
+                if w0 < -0.10 or w1 < -0.10 or w2 < -0.10:
+                    continue
+                i4 = (yy * size + xx) * 4
+                # outset (~1px, kills seam gutters) may only fill EMPTY
+                # texels — unconditional writes let a big island's outset
+                # overwrite a small neighbor's territory (an eye island
+                # painted over in skin = the eye visually vanishes)
+                if (w0 < 0 or w1 < 0 or w2 < 0) and A[i4 + 3] >= 0.5:
+                    continue
+                A[i4:i4 + 3] = col
+                A[i4 + 3] = 1.0
 
     ao = _self_bake(obj, 'AO', size, "PB_ao", True, samples=128)
     nrm = _self_bake(obj, 'NORMAL', size, "PB_nrm", True,

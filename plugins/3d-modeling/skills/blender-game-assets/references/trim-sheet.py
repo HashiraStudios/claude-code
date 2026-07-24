@@ -293,10 +293,13 @@ def trim_map_around(obj, poly_indices, strip, density=1.0, margin_px=2,
 
 def cover_ring(obj, z_local, height=0.09, outset=0.035, strip='beam',
                density=1.0, segments=18):
-    """Molding ring hugging `obj` (a vertical tower/cylinder, own local
-    coords) at local height `z_local` — use at every texture-band seam.
-    Radius is SAMPLED from the mesh at both ring edges, so it follows
-    tapered/bulged towers. Returns the ring object (same trim strip)."""
+    """SOLID molding ring hugging `obj` (a vertical tower/cylinder, own
+    local coords) at local height `z_local` — use at every texture-band
+    seam. Closed rectangular profile: the inner edge SINKS INTO the wall
+    (sampled radius − 0.03) so no gap can ever open against a tapered /
+    bulged surface, plus top and bottom cap faces — a single offset band
+    with no thickness reads as a floating paper strip, never do that.
+    Radius is sampled from the mesh at both ring edges. Returns the ring."""
     import bmesh as _bm
     import math as _m
     from mathutils import Vector
@@ -313,18 +316,23 @@ def cover_ring(obj, z_local, height=0.09, outset=0.035, strip='beam',
             tol *= 2
         return max(best) if best else 0.5
 
-    r0 = r_at(z_local - height / 2) + outset
-    r1 = r_at(z_local + height / 2) + outset
+    rb, rt = r_at(z_local - height / 2), r_at(z_local + height / 2)
+    sink = 0.03
+    # profile corners per segment: inner-bottom, outer-bottom, outer-top,
+    # inner-top  (inner radius buried in the wall)
+    prof = ((rb - sink, -height / 2), (rb + outset, -height / 2),
+            (rt + outset, height / 2), (rt - sink, height / 2))
     bm = _bm.new()
-    for zi, rr in ((-height / 2, r0), (height / 2, r1)):
-        for k in range(segments):
-            th = k / segments * 2 * _m.pi
-            bm.verts.new((rr * _m.cos(th), rr * _m.sin(th), zi))
-    bm.verts.ensure_lookup_table()
-    for k in range(segments):
-        k2 = (k + 1) % segments
-        bm.faces.new((bm.verts[k], bm.verts[k2],
-                      bm.verts[segments + k2], bm.verts[segments + k]))
+    rows = []
+    for rr, zi in prof:
+        rows.append([bm.verts.new((rr * _m.cos(k / segments * 2 * _m.pi),
+                                   rr * _m.sin(k / segments * 2 * _m.pi), zi))
+                     for k in range(segments)])
+    for a, b in ((1, 2), (2, 3), (0, 1), (3, 0)):   # outer wall FIRST,
+        for k in range(segments):                    # then top, bottom, inner
+            k2 = (k + 1) % segments
+            bm.faces.new((rows[a][k], rows[a][k2],
+                          rows[b][k2], rows[b][k]))
     _bm.ops.recalc_face_normals(bm, faces=bm.faces)
     me = bpy.data.meshes.new(obj.name + "Ring")
     bm.to_mesh(me)
@@ -335,8 +343,20 @@ def cover_ring(obj, z_local, height=0.09, outset=0.035, strip='beam',
     ring.location = obj.matrix_world @ Vector((0, 0, z_local))
     for m in obj.data.materials:
         ring.data.materials.append(m)
-    trim_map_around(ring, list(range(len(ring.data.polygons))), strip,
-                    density=density)
+    # outer wall (first `segments` polys) wraps the strip normally; caps and
+    # inner wall have zero z-span, so pin them to the strip's middle row
+    trim_map_around(ring, list(range(segments)), strip, density=density)
+    v0, v1 = _strip_band(strip)
+    vmid = (v0 + v1) / 2
+    uv = ring.data.uv_layers["UVMap"]
+    for p in list(ring.data.polygons)[segments:]:
+        ths = {vi: _m.atan2(ring.data.vertices[vi].co.y,
+                            ring.data.vertices[vi].co.x) for vi in p.vertices}
+        if max(ths.values()) - min(ths.values()) > _m.pi:    # seam wrap
+            ths = {vi: (t + 2 * _m.pi if t < 0 else t)
+                   for vi, t in ths.items()}
+        for li, vi in zip(p.loop_indices, p.vertices):
+            uv.data[li].uv = (ths[vi] * (rb + rt) / 2 * density, vmid)
     return ring
 
 

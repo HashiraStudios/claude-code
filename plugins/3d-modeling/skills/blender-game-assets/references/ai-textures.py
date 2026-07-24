@@ -36,6 +36,14 @@ GENERATOR ACCESS NOTES (session-dependent):
     network policy to allow api.openai.com / fal.run.
   * Or a human generates externally and drops PNGs into the repo.
 Once any route works: generate -> save PNGs -> make_tileable -> assemble.
+
+VALIDATED END-TO-END with gpt-image-1 (1024px, quality=medium, ~40s each):
+the per-material prompts above produced genuine hand-painted-grade surfaces
+(painted wood grain with knots and cracked highlights, stone with painted
+bevels and mortar) that the procedural pass could not reach. Assembled at
+512 via assemble_trim, normal via normal_from_image(strength~1.6, normal
+material strength ~0.8 — AI sheets carry painted shading already, so keep
+the normal subtle), roughness per strip as usual.
 """
 
 import bpy

@@ -97,7 +97,14 @@ def unique_bake(obj, sheet_img, rough_img=None, metal_img=None, size=768,
                 w0 = ((by - cy) * (xx + 0.5 - cx) + (cx - bx) * (yy + 0.5 - cy)) / d
                 w1 = ((cy - ay) * (xx + 0.5 - cx) + (ax - cx) * (yy + 0.5 - cy)) / d
                 w2 = 1 - w0 - w1
-                if w0 < -0.08 or w1 < -0.08 or w2 < -0.08:   # outset kills gutters
+                if w0 < -0.08 or w1 < -0.08 or w2 < -0.08:
+                    continue
+                i4c = (yy * size + xx) * 4
+                # outset texels (outside the triangle proper) may only fill
+                # EMPTY space — writing them unconditionally lets a triangle
+                # bleed into a NEIGHBORING island's territory in atlas space
+                # (foreign-color zipper along island borders)
+                if (w0 < 0 or w1 < 0 or w2 < 0) and A[i4c + 3] >= 0.5:
                     continue
                 tu = tpts[0][0] * w0 + tpts[1][0] * w1 + tpts[2][0] * w2
                 tv = tpts[0][1] * w0 + tpts[1][1] * w1 + tpts[2][1] * w2
@@ -110,6 +117,37 @@ def unique_bake(obj, sheet_img, rough_img=None, metal_img=None, size=768,
                 if M is not None:
                     M[i4:i4 + 3] = _bilinear(aux[1][0], aux[1][1], aux[1][2], tu, tv)
                     M[i4 + 3] = 1.0
+
+    # 2b. gutter dilation: fill empty texels bordering filled ones so island
+    # seams never show the void (outset alone leaves jagged dark seams on
+    # curved surfaces split into many islands)
+    for _ in range(3):
+        grown = []
+        for yy in range(size):
+            for xx in range(size):
+                i4 = (yy * size + xx) * 4
+                if A[i4 + 3] >= 0.5:
+                    continue
+                acc, cnt = [0.0, 0.0, 0.0], 0
+                for ox, oy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                    nx, ny = xx + ox, yy + oy
+                    if 0 <= nx < size and 0 <= ny < size:
+                        j4 = (ny * size + nx) * 4
+                        if A[j4 + 3] >= 0.5:
+                            for c in range(3):
+                                acc[c] += A[j4 + c]
+                            cnt += 1
+                if cnt:
+                    grown.append((i4, [a / cnt for a in acc]))
+        if not grown:
+            break
+        for i4, col in grown:
+            A[i4:i4 + 3] = col
+            A[i4 + 3] = 1.0
+            if R is not None:
+                R[i4 + 3] = 1.0
+            if M is not None:
+                M[i4 + 3] = 1.0
 
     # 3. positioned edge paint: convex/border -> warm stroke, concave -> violet
     edge_faces = {}

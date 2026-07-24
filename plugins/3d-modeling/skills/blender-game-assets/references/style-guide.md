@@ -110,6 +110,28 @@ shadow-color / highlight-color sentence for all materials of an asset
 grade adds the macro read. Sources: Blizzard artist writeups (Matt McDaid),
 polycount hand-painted threads, Emilie Stabell / Windy Games tutorials.
 
+## Vehicles: the chopper lesson (WoW Mekgineer's Chopper school)
+
+A vehicle assembled from raw primitives reads as a TIN TOY. What fixes it
+(learned rebuilding the moto against WoW's chopper style):
+
+- **Exaggerate the signature masses.** Chopper = fat rear wheel + huge
+  engine; front wheel smaller and pushed FAR out on a raked fork (~36°+).
+  Equal wheels + upright fork = bicycle, not attitude.
+- **Bevel every body mass** (`bevel_all_sharp` on tank, seat, crankcase).
+  Raw box edges are the single biggest tin-can tell — beveled edges catch
+  the key light as soft highlights.
+- **Kinematic sanity sells the machine**: fork TOP sits BEHIND the bottom
+  (rake back), legs land exactly ON the front axle, exhaust headers START
+  at the engine and their tips end PAST the wheel silhouette (a pipe that
+  stops mid-wheel reads as floating scaffolding).
+- **Functional greebles tell the story**: V-twin cylinders with stacked
+  cooling-fin plates, seat springs, headlight bezel ring, bar risers.
+  A handful of small "why it works" parts beats any amount of texture.
+- Same trim discipline as architecture: map every cylinder axis-aligned,
+  rotate after; body color / bare steel / dark iron / rubber / leather
+  each own a strip of one sheet.
+
 ## Seam covers: no raw material transitions
 
 Where two tiling textures meet on one surface (stone course → plaster

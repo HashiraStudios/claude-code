@@ -131,6 +131,11 @@ A vehicle assembled from raw primitives reads as a TIN TOY. What fixes it
 - Same trim discipline as architecture: map every cylinder axis-aligned,
   rotate after; body color / bare steel / dark iron / rubber / leather
   each own a strip of one sheet.
+- **Anatomy beats attitude** (second lesson, from pro blockbench refs):
+  after the shape rules, what makes a vehicle ACCEPTABLE is assembly
+  anatomy — wheel = tire+rim+hub+axle, visible tube frame, finned engine
+  centerpiece, triple-clamped fork, layered body panels. Executable
+  helpers + full checklist: `vehicle-kit.py`.
 
 ## Seam covers: no raw material transitions
 

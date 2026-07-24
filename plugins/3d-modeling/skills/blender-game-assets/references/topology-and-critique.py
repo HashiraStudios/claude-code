@@ -238,6 +238,10 @@ def render_beauty(target, name="beauty", samples=48, res=1024):
            size=math.radians(40))                      # cool, near-shadowless
     _light("RimSun", 'SUN', 1.8, (1.0, 1.0, 1.0), (0.3, 0.9, -0.35),
            size=math.radians(3))                       # crisp silhouette edge
+    _light("BounceSun", 'SUN', 0.35, (0.95, 0.92, 0.85), (-0.2, 0.3, 0.9),
+           size=math.radians(60))                      # soft ground bounce -
+                                       # stylized scenes never go dead black
+                                       # in occluded pockets (eaves, caps)
 
     cam = _ensure_camera()
     paths = []

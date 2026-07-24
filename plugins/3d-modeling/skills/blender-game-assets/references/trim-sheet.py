@@ -181,21 +181,41 @@ def trim_map(obj, poly_indices, strip, density=1.0, margin_px=2, fit='selection'
         a = max(range(3), key=lambda i: abs(p.normal[i]))
         ua, va = ((0, 1) if a == 2 else (1, 2) if a == 0 else (0, 2))
         spans.append((p, ua, va))
-    vcoords = [obj.data.vertices[vi].co[va]
-               for p, ua, va in spans for vi in p.vertices]
-    mn, mx = min(vcoords), max(vcoords)
-    span = (mx - mn) or 1.0
+    # V spans PER PROJECTION AXIS — mixing them (e.g. side faces fitting by z
+    # while top caps fit by y) mis-normalizes the caps onto the strip's dark
+    # border rows: the "black square" end-cap artifact.
+    groups = {}
     for p, ua, va in spans:
+        groups.setdefault(va, []).extend(
+            obj.data.vertices[vi].co[va] for vi in p.vertices)
+    gspan = {va: (min(cs), (max(cs) - min(cs)) or 1.0)
+             for va, cs in groups.items()}
+    max_span = max(s for _, s in gspan.values())
+    for p, ua, va in spans:
+        mn, span = gspan[va]
+        tiny = span < 0.15 * max_span      # end caps / slivers
         if fit == 'face':
             fvs = [obj.data.vertices[vi].co[va] for vi in p.vertices]
             fmn, fspan = min(fvs), (max(fvs) - min(fvs)) or 1.0
+        if tiny:
+            u_mean = sum(obj.data.vertices[vi].co[ua]
+                         for vi in p.vertices) / len(p.vertices)
         for li, vi in zip(p.loop_indices, p.vertices):
             co = obj.data.vertices[vi].co
             if fit == 'face':
                 t = (co[va] - fmn) / fspan
             else:
                 t = (co[va] - mn) / span
-            uv.data[li].uv = (co[ua] * density, v0 + t * (v1 - v0))
+            if tiny:
+                # small caps: middle of the strip AND middle of the tile —
+                # u~0 is the tiling crossfade seam, the darkest area of AI-
+                # generated sources; a tiny face sampling one dark spot there
+                # renders as a black square
+                t = 0.35 + 0.30 * t
+                u = 0.5 + (co[ua] - u_mean) * density
+            else:
+                u = co[ua] * density
+            uv.data[li].uv = (u, v0 + t * (v1 - v0))
 
 
 def trim_swap(obj, poly_indices, strip, margin_px=2):

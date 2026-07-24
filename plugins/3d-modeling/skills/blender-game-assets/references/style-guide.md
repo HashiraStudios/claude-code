@@ -39,6 +39,15 @@ Style lives in FORM before texture (deformers in `shape-language.py`):
 
 ## Mesh beauty: what makes topology "bonita"
 
+**The polish pass is mandatory** (`shade_smooth(obj, angle)` +
+`add_torus` in modeling-recipes): curved surfaces smooth-shaded with
+hard edges kept by angle, revolved rings built as tori (a squat cylinder
+is never a ring), and enough segments for the curvature to read. Flat
+faceting on a curved part is the loudest "obvious primitive" tell —
+facet ONLY where faceting is the intended style. Match the base asset:
+if the base is smooth-shaded (KayKit is), unpolished accessories clash
+instantly.
+
 A mesh is presentable when someone opening the wireframe nods:
 
 1. **Silhouette carries the design.** Detail that doesn't change the outline or

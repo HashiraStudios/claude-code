@@ -344,3 +344,36 @@ def assert_attached(target, point, tol=0.04, label=""):
           f"endpoint {tuple(round(c, 3) for c in point)} is {d:.3f}m from "
           f"{target.name} (tol {tol})")
     return ok
+
+
+# ---------------------------------------------------------------------------
+# MESH POLISH — the vertex/edge/face-level finish pass
+# ---------------------------------------------------------------------------
+# Primitive shells read as "programmer art" until polished: curved surfaces
+# must be SMOOTH-SHADED with hard edges preserved by angle, revolved rims
+# want a torus (not a squat cylinder), and curvature needs enough segments
+# to sell the surface. Run polish() on every curved part as the LAST
+# geometry step; skip it only where faceting is the intended style.
+
+def shade_smooth(obj, angle_deg=40):
+    """Smooth shading + auto-smooth: soft surfaces, hard edges kept where
+    the face angle exceeds `angle_deg`. THE one-liner that separates a
+    modeled part from an obvious primitive."""
+    for p in obj.data.polygons:
+        p.use_smooth = True
+    obj.data.use_auto_smooth = True
+    obj.data.auto_smooth_angle = math.radians(angle_deg)
+
+
+def add_torus(name, major_radius=0.5, minor_radius=0.1, major_segments=20,
+              minor_segments=10, location=(0, 0, 0)):
+    """Revolved ring (goggle rim, bracelet, tire, handle). Far better edge
+    flow than a stubby cylinder for anything that IS a ring."""
+    bpy.ops.mesh.primitive_torus_add(major_radius=major_radius,
+                                     minor_radius=minor_radius,
+                                     major_segments=major_segments,
+                                     minor_segments=minor_segments,
+                                     location=location)
+    obj = bpy.context.active_object
+    obj.name = name
+    return obj

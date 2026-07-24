@@ -152,7 +152,8 @@ BG_COLORS = {                     # what shows between elements (mortar/gaps)
 }
 
 
-def bake_trim_sheet(parts, size=512, out_prefix=None, ao_strength=1.1):
+def bake_trim_sheet(parts, size=512, out_prefix=None, ao_strength=1.1,
+                    handpaint=True):
     """RAYCAST bake — deterministic and headless-proof.
 
     Cycles' selected-to-active bake has context/CPU pitfalls in background
@@ -205,6 +206,41 @@ def bake_trim_sheet(parts, size=512, out_prefix=None, ao_strength=1.1):
                 npx[i4:i4 + 3] = [0.5, 0.5, 1.0]
                 cpx[i4:i4 + 3] = bg
             npx[i4 + 3] = cpx[i4 + 3] = 1.0
+
+    # ---- HANDPAINT PASS (shabik3d / WoW-school hand-painted look) --------
+    # Painted surface language derived from the height field:
+    #   * EDGE HIGHLIGHTS: a texel whose upper neighbor drops away is a top
+    #     rim -> painted warm bright line (the signature hand-painted trick)
+    #   * CONTACT SHADE: a texel whose lower neighbor drops away is a bottom
+    #     rim -> painted cool darkening
+    #   * GRAIN STROKES: subtle directional value streaks along U (wood)
+    if handpaint:
+        import math as _m
+        import random as _r
+        rng = _r.Random(23)
+        row_seed = [rng.uniform(0, _m.tau) for _ in range(size)]
+        for y in range(size):
+            for x in range(size):
+                idx = y * size + x
+                h0 = H[idx]
+                if h0 <= 0.0005:
+                    continue
+                i4 = idx * 4
+                up = H[min(size - 1, y + 2) * size + x]
+                dn = H[max(0, y - 2) * size + x]
+                f = 1.0
+                if h0 - up > 0.004:            # top rim -> warm highlight
+                    f *= 1.28
+                    cpx[i4] = min(1.0, cpx[i4] + 0.012)   # barely-warm, not pink
+                elif h0 - dn > 0.004:          # bottom rim -> cool shade
+                    f *= 0.80
+                    cpx[i4 + 2] = min(1.0, cpx[i4 + 2] * 1.04)
+                # directional grain: WOOD bands only (v >= 0.5 in our layout) —
+                # plaster and stone must stay streak-free
+                if y >= size // 2:
+                    f *= 1.0 + 0.045 * _m.sin(x * 0.55 + row_seed[(y // 3) % size])
+                for c in range(3):
+                    cpx[i4 + c] = max(0.0, min(1.0, cpx[i4 + c] * f))
 
     # horizon-based AO from the height field: taller neighbors occlude
     apx = [0.0] * (n * 4)

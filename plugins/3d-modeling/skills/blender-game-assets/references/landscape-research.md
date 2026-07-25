@@ -137,6 +137,15 @@ symmetric, clean single spike row, sculpted eye sockets, individual
 claws. Generation ~3 min on a 4090 (~$0.04). gpt-image-2 view quality
 is far above gpt-image-1 (near mirror-perfect profiles) — use it for
 all concept/view generation.
+**Retopology**: Hunyuan3D-PolyGen 1.5 (the site's "polymesh" tool) has
+NO open weights (unanswered community request, July 2025) — available
+only via 3d.hunyuan.tencent.com and the Scenario platform. The local
+stand-in is Blender's built-in **QuadriFlow** (`quadriflow_remesh`):
+pre-decimate the dense mesh to ~250k tris, then target_faces≈9000 with
+mesh symmetry → pure-quad uniform topology (7.2k quads on the dragon,
+zero triangles, all features held). Not PolyGen's feature-aligned edge
+loops, but real game topology: deformation-ready and subdividable —
+replaces triangle decimation as the standard retopo stage.
 **Reference-driven feature placement** (new core technique): geometry
 probes for eye placement kept latching onto the muzzle (most-protruding
 ≠ feature). Instead, READ the front reference view: threshold the two

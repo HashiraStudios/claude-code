@@ -13,6 +13,10 @@ import argparse, base64, json, os, sys, time, urllib.request, urllib.error
 
 KEY = os.environ.get("RUNPOD_API_KEY") or sys.exit("set RUNPOD_API_KEY")
 GQL = "https://api.runpod.io/graphql"
+# Cloudflare fronts the RunPod API and rejects the default Python-urllib
+# agent with "error code: 1010" (403). curl passes, urllib does not — so
+# every request here must carry a real User-Agent or nothing deploys.
+UA = "curl/8.5.0"
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 MODES = {
@@ -31,7 +35,8 @@ def gql(query, variables=None):
     body = json.dumps({"query": query, "variables": variables or {}}).encode()
     req = urllib.request.Request(GQL, data=body,
                                  headers={"Content-Type": "application/json",
-                                          "Authorization": f"Bearer {KEY}"})
+                                          "Authorization": f"Bearer {KEY}",
+                                          "User-Agent": UA})
     return json.loads(urllib.request.urlopen(req, timeout=120).read())
 
 
@@ -51,7 +56,8 @@ def deploy(mode, name):
 
 
 def http(url, data=None, method="GET", timeout=120):
-    req = urllib.request.Request(url, data=data, method=method)
+    req = urllib.request.Request(url, data=data, method=method,
+                                 headers={"User-Agent": UA})
     return urllib.request.urlopen(req, timeout=timeout).read()
 
 

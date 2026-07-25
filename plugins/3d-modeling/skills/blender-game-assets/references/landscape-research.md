@@ -104,6 +104,26 @@ marching cubes there).
    imports DTensor, torch≥2.5 only).
 7. Monitor script polls status, fetches artifacts on done/fail, then
    ALWAYS terminates the pod (deadline-bounded) — no orphan billing.
+8. **GPU fail-fast**: first boot step is `assert torch.cuda.is_available()`.
+   A "SECURE" machine shipped with no CUDA and silently ran Cube on CPU
+   for 32 min until the monitor deadline killed it; the assert turns that
+   into a 30-second $0.01 failure. If redeploy lands on the same broken
+   machineId, switch gpuTypeId — RunPod keeps assigning the only free unit.
+9. **Getting input files INTO a pod**: dockerArgs rejects large payloads
+   (~160KB base64 embed → GraphQL Internal Server Error), public drop
+   hosts are dead to datacenter traffic (tmpfiles.org 403s from the pod,
+   0x0.st/catbox closed uploads entirely), and private-repo raw URLs need
+   tokens. The reliable pattern: the pod serves its own upload endpoint —
+   boot starts a ThreadingHTTPServer whose do_PUT writes the body to disk
+   (GET keeps serving status/results), sets status 'await-pc' and waits;
+   the local monitor sees that status and curl -T PUTs the file through
+   https://{podId}-8000.proxy.runpod.net. No third party involved.
+10. MeshAnythingV2 on stock pytorch images: stub mesh2sdf (no wheel, only
+   needed for --mc), and patch flash-attn to eager — replace
+   `"flash_attention_2"`→`"eager"` + drop `use_flash_attention_2=True` /
+   `to_bettertransformer()` in meshanything_v2.py, and in shape_opt.py
+   replace the "Only flash_attention_2" raise with a
+   `_prepare_4d_causal_attention_mask` call (transformers 4.39).
 
 ## What this skill should borrow next
 1. MeshAnything-style conditioning as a bridge: image-to-3D for organic

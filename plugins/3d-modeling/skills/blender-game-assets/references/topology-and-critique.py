@@ -285,3 +285,48 @@ def render_beauty(target, name="beauty", samples=48, res=1024):
     for p in paths:
         print("  " + p)
     return paths
+
+
+# ---------------------------------------------------------------------------
+# CLAY RENDER — the BLOCKOUT-stage deliverable (hybrid workflow checkpoint 1)
+# ---------------------------------------------------------------------------
+
+def render_clay(target, name="clay", res=1024):
+    """The review look every 3D artist expects for a blockout: matte gray
+    clay, studio light, CAVITY on (whitened ridge edges + darkened
+    valleys) and soft shadows. Ships proportions and silhouette for
+    approval BEFORE any texturing — the human checkpoint deliverable.
+    Four views: front, side, back, 3/4."""
+    scene = bpy.context.scene
+    scene.render.engine = 'BLENDER_WORKBENCH'
+    sh = scene.display.shading
+    sh.light = 'STUDIO'
+    sh.color_type = 'SINGLE'
+    sh.single_color = (0.72, 0.72, 0.72)
+    sh.show_cavity = True
+    sh.cavity_type = 'BOTH'
+    sh.cavity_ridge_factor = 1.8       # the whitened-corner signature
+    sh.cavity_valley_factor = 1.1
+    sh.curvature_ridge_factor = 1.6
+    sh.curvature_valley_factor = 1.0
+    sh.show_shadows = True
+    sh.shadow_intensity = 0.35
+    scene.render.resolution_x = scene.render.resolution_y = res
+    scene.render.film_transparent = True
+    cam = _ensure_camera()
+    views = {
+        "front": ((0, -1, 0), True),
+        "side":  ((1, 0, 0), True),
+        "back":  ((0, 1, 0), True),
+        "34":    ((1, -1, 0.55), False),
+    }
+    paths = []
+    for label, (direction, ortho) in views.items():
+        _frame(cam, target, direction, ortho=ortho)
+        scene.render.filepath = f"{OUT}/{name}_{label}.png"
+        bpy.ops.render.render(write_still=True)
+        paths.append(scene.render.filepath)
+    print("Clay previews:")
+    for p in paths:
+        print("  " + p)
+    return paths

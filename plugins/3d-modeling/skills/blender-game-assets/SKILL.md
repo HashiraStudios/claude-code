@@ -43,9 +43,31 @@ The reference files are the core of the modeling capability — load and use the
 | `references/ai-textures.py` | The TOP texturing tier: source painted surfaces from an image generator (per-material prompt templates included, validated with gpt-image-1) and let the pipeline do what generators can't — `make_tileable` (crossfade wrap; also where AI tiles are DARKEST, see the cap rule in trim_map), `assemble_trim` (resample per-material sources into the STRIPS bands), then normal/rough derivation and the trim mapping system. Division of labor: generator paints, pipeline engineers. TWO PROMPT LAWS learned in testing: every material of one asset must share ONE art-direction sentence (palette + shadow/highlight color rules) or the strips never harmonize; and rich prompts make generators invent windows/doors/beams INSIDE material swatches — always append the explicit architectural-feature ban. |
 | `references/vehicle-kit.py` | Machine anatomy, executable (studied against pro low-poly motorcycle references): the anatomy checklist (wheels are ASSEMBLIES — tire+rim+hub+axle; a visible tube frame connects everything; the finned engine is the centerpiece; fork = tubes + triple clamps; layered body panels; exhaust from engine to past the wheel) plus `tube()` (point-to-point connector primitive), `wheel_asm()`, `fin_stack()`. Includes the texel-density law: small parts take ~0.5 density or busy strips read as cracked shell. |
 | `references/unique-bake.py` | The HERO-ASSET texture tier: `unique_bake(obj, sheet, rough, metal)` rebakes the trim-mapped look into ONE unique UV atlas (BakeUV smart_project; per-texel barycentric trim-UV interp + bilinear sheet sampling, U wraps) and then paints POSITIONED detail from the geometry itself — warm strokes on convex edges and open shell borders, violet shadow strokes on concave edges, drawn in UV space along each face's loops. Fixes what trims can't: no repetition, and every bevel gets its highlight exactly where a hand-painter would put it. Data-map gotcha included: float_buffer + Non-Color BEFORE assigning pixels. Trims for kit pieces; unique_bake for heroes. |
+| `references/staged-pipeline.py` | The HYBRID operating mode: four stages with human gates — 1 BLOCKOUT (deliver `render_clay()` gray-cavity previews + `stage_save()` .blend), 2 TEXTURE (re-open, RE-MEASURE, texture ladder), 3 RIG (weights + verification + bend test), 4 ANIMATION (clips + export). The human can open any checkpoint .blend, edit, and hand back; every stage resumes by re-running the cheap probes against the received file. |
 | `references/art-direction.py` | The ANTI-STIFFNESS pass (Blizzard/Riot school, mandatory on every finished asset): `stylize_grade(sheet)` — saturated violet-shifted shadows (never gray, never black), warm dodge highlights, low-frequency hue vibration, applied to the assembled sheet BEFORE deriving normal/rough; then `grade_object(obj)` after join — macro value gradient (dark saturated base → warm lifted top) plus colored-vertex AO, stored in a "Grade" vertex-color attribute and multiplied over Base Color, so it rides on top of trim UVs without touching the mapping (the texture repeats; the grade doesn't). |
 
 ---
+
+## Hybrid staged workflow (the default for real production)
+
+Prefer working as a PIPELINE WITH HUMAN GATES over one-shot generation
+(`references/staged-pipeline.py`). The four stages and their deliverables:
+
+1. **BLOCKOUT** — build with the construction/shape/anatomy stack; deliver
+   `render_clay()` views (matte gray, cavity-whitened edges, soft shadows —
+   the review look artists expect) + a `stage_save('blockout')` .blend.
+   *Human gate: proportions, details, silhouette edits.*
+2. **TEXTURE** — `stage_open()` the possibly-edited file, **re-measure
+   everything** (the human may have moved anything; the probes adapt), then
+   the texture ladder + art direction. Deliver beauty renders + checkpoint.
+   *Human gate: UVs, materials, colors.*
+3. **RIG** — armature, explicit per-part weights, weight verification,
+   bend-test renders. *Human gate: weights and bone tweaks.*
+4. **ANIMATION** — keyframed clips, frame previews, FBX/GLB export.
+
+The resume rule that makes hybrid work: every stage re-runs the cheap
+verifications (dimensions, attach probes, weight counts) against the file
+it received. Human edits are expected input, not corruption.
 
 ## Core Workflow
 

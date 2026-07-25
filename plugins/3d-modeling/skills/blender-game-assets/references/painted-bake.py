@@ -178,10 +178,19 @@ def painted_bake(obj, palette_img, size=512, samples=32,
         v = max(0.0, min(1.0, v))
         return 12.92 * v if v <= 0.0031308 else 1.055 * v ** (1 / 2.4) - 0.055
 
+    # STITCH-SEAM RULE: the albedo raster outsets ~1px but the bakes carry
+    # an 8px margin — texels 2..8px outside an island have a VALID normal
+    # and a BLACK albedo. Composing them paints a dark ring that bilinear/
+    # mip filtering samples at every seam ("stitched plush" dashes). Only
+    # compose texels the albedo actually filled; dilate everything else.
     outpx = [0.0] * (size * size * 4)
+    filled = bytearray(size * size)
     for i in range(0, size * size * 4, 4):
+        if A[i + 3] < 0.5:                       # albedo never wrote here
+            continue                             # -> fill by dilation below
         n = Vector((N[i] * 2 - 1, N[i + 1] * 2 - 1, N[i + 2] * 2 - 1))
-        if n.length < 0.35:                      # empty texel
+        filled[i // 4] = 1
+        if n.length < 0.35:                      # outset texel: plain albedo
             outpx[i:i + 3] = [srgb(A[i]), srgb(A[i + 1]), srgb(A[i + 2])]
             outpx[i + 3] = 1.0
             continue
@@ -197,6 +206,32 @@ def painted_bake(obj, palette_img, size=512, samples=32,
             v = A[i + c] * tint[c] * f * aof * hgt / 0.95 + spec
             outpx[i + c] = srgb(v)
         outpx[i + 3] = 1.0
+
+    # gutter dilation: grow filled texels outward so filtering/mips never
+    # reach an unfilled (black) texel near a seam
+    for _ in range(8):
+        grew = []
+        for t in range(size * size):
+            if filled[t]:
+                continue
+            y, x = divmod(t, size)
+            acc = [0.0, 0.0, 0.0]; cnt = 0
+            for dy, dx in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+                ny, nx = y + dy, x + dx
+                if 0 <= ny < size and 0 <= nx < size and filled[ny * size + nx]:
+                    j = (ny * size + nx) * 4
+                    for c in range(3):
+                        acc[c] += outpx[j + c]
+                    cnt += 1
+            if cnt:
+                i4 = t * 4
+                outpx[i4:i4 + 3] = [a / cnt for a in acc]
+                outpx[i4 + 3] = 1.0
+                grew.append(t)
+        if not grew:
+            break
+        for t in grew:
+            filled[t] = 1
 
     painted = bpy.data.images.new("PaintedDiffuse", width=size, height=size,
                                   alpha=False)

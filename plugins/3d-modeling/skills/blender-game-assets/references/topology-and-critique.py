@@ -178,6 +178,16 @@ CONNECTIONS (the class of error the eye misses in full-frame renders)
   [ ] Zoom pass: inspect at least one CLOSE crop of each joint cluster —
       full-frame renders hide floating endpoints and small gaps.
 
+FORM vs LAYOUT (the dragon lesson — layout match is not form match)
+  [ ] Against the model sheet: render the SAME views and compare
+      SILHOUETTES, not part positions. List every mass the concept draws
+      (cheeks, brow, haunches, mouth line, horn bands...) and check each
+      exists as a SHAPED form in the mesh. Unmodified primitives placed
+      at the right coordinates still fail this box.
+  [ ] Organic character? Prefer a generated organic base (Cube3D →
+      MeshAnything/decimate) over primitive assembly; procedural stays
+      for hard-surface and part-based humanoids.
+
 MATERIAL SEMANTICS
   [ ] Every surface wears a material that IS that surface (roof boards are
       not balloon fabric; stone is not burlap). If the semantic material

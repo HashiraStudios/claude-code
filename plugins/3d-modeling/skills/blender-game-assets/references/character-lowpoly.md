@@ -18,6 +18,31 @@ Stylized rules: hands and feet ~1.5x realistic size (silhouette + readability),
 neck short or absent, shoulders wide for heroes / narrow for cute. Pick total
 height in meters first (e.g. 1.35 m villager) and derive part sizes.
 
+## ORGANIC FORM RULE — primitive assembly is below the bar
+
+(Lesson from the dragon: a character assembled from unmodified
+spheres/cones passed the layout check against its model sheet and still
+read as a toy mannequin — the same failure as the first "tin can"
+motorcycle, on a creature.)
+
+- **Raw primitives are scaffolding, never the deliverable.** Every major
+  mass must be SHAPED after placement: cheek/brow/haunch volumes,
+  taper/bulge on limbs, a carved mouth line. A sphere with eye stickers
+  is not a head.
+- **Creature faces have mandatory features**: brow ridge, muzzle with a
+  mouth line (geometry or texture), nostrils at hero tier, cheek volume.
+  A face without a mouth FAILS the gate regardless of silhouette.
+- **The critique gate must compare FORM, not layout**: render the
+  blockout from the sheet's exact views and compare SILHOUETTES
+  feature-by-feature against the concept (checklist the concept's shapes:
+  which masses exist in the drawing but not in the mesh?). Matching
+  positions/proportions while missing sculpted forms is a FAIL.
+- **For organic characters, prefer a generated base**: the production
+  path is Cube3D (GPU) shape → MeshAnything/decimate to artist mesh →
+  skill adds measured features, accessories, texture, rig. Procedural
+  construction remains the path for hard-surface and for part-based
+  humanoids (below), where boxes/cylinders + joint rings are the idiom.
+
 ## Construction: part-based, joined, with joint rings
 
 Industry-standard for this tier — parts are separate shells joined into ONE

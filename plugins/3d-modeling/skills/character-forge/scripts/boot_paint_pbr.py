@@ -21,6 +21,21 @@ class H(http.server.SimpleHTTPRequestHandler):
 srv = http.server.ThreadingHTTPServer(('0.0.0.0', 8000), H)
 threading.Thread(target=srv.serve_forever, daemon=True).start()
 
+def fetch(url, timeout=300, tries=4):
+    """Downloads from GitHub DO get truncated mid-stream (IncompleteRead).
+    An unretried fetch turns a transient blip into a wasted pod."""
+    for i in range(tries):
+        try:
+            d = urllib.request.urlopen(url, timeout=timeout).read()
+            if len(d) < 1000:
+                raise RuntimeError('suspiciously small download: %d bytes' % len(d))
+            return d
+        except Exception as e:
+            if i == tries - 1:
+                raise
+            time.sleep(5 * (i + 1))
+
+
 def run(name, cmd, cwd=None, timeout=2400, env=None):
     e = dict(os.environ)
     if env:
@@ -38,7 +53,7 @@ try:
     import torch
     assert torch.cuda.is_available(), 'NO CUDA on this machine'
     st('fetch-repo')
-    data = urllib.request.urlopen('https://github.com/Tencent-Hunyuan/Hunyuan3D-2.1/archive/refs/heads/main.tar.gz', timeout=300).read()
+    data = fetch('https://github.com/Tencent-Hunyuan/Hunyuan3D-2.1/archive/refs/heads/main.tar.gz', timeout=300)
     tarfile.open(fileobj=io.BytesIO(data)).extractall('/workspace')
     R = '/workspace/Hunyuan3D-2.1-main'
     st('apt-libs')
@@ -61,7 +76,7 @@ try:
         cwd=R + '/hy3dpaint/DifferentiableRenderer')
     st('fetch-esrgan')
     os.makedirs(R + '/hy3dpaint/ckpt', exist_ok=True)
-    data = urllib.request.urlopen('https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth', timeout=600).read()
+    data = fetch('https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth', timeout=600)
     open(R + '/hy3dpaint/ckpt/RealESRGAN_x4plus.pth', 'wb').write(data)
     st('await-files')
     need = ['mesh.obj', 'ref.png', 'done.txt']

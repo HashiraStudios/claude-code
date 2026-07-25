@@ -68,9 +68,14 @@ try:
                 'onnxruntime', 'omegaconf', 'tqdm', 'ninja', 'pybind11',
                 'peft', 'sentencepiece', 'bpy==4.2.0', 'realesrgan==0.3.0', 'basicsr==1.4.2', 'fast_simplification'])
     st('compile-rast')
+    # Build the rasterizer for EVERY card the orchestrator may fall back to,
+    # not just the 4090 (8.9). Landing on an A6000/A40/3090 (8.6) with an
+    # 8.9-only kernel fails at render time with "no kernel image is
+    # available for execution on the device" — after the pod has already
+    # paid for the whole compile.
     run('rast', [sys.executable, 'setup.py', 'install'],
         cwd=R + '/hy3dpaint/custom_rasterizer',
-        env={'TORCH_CUDA_ARCH_LIST': '8.9'})
+        env={'TORCH_CUDA_ARCH_LIST': '8.0;8.6;8.9'})
     st('compile-renderer')
     run('rend', ['bash', 'compile_mesh_painter.sh'],
         cwd=R + '/hy3dpaint/DifferentiableRenderer')

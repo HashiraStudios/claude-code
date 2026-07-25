@@ -53,6 +53,30 @@ motorcycle, on a creature.)
   and part-based humanoids (below), where boxes/cylinders + joint rings
   are the idiom.
 
+## DECOMPOSITION-FIRST (plan the split BEFORE generating)
+
+(User-taught, kigurumi-kid lesson.) Before any generation, STUDY the
+character and decide what must be separate parts — the goal is that
+every generated mesh is CLEAN BY CONSTRUCTION, so assembly is a
+placement, never surgery.
+
+- Split along NATURAL ASSEMBLY SEAMS: where real objects nest or meet
+  (a head inside a hood, a weapon in a hand, a hat on a head, a rider
+  on a mount). Never plan to cut a finished mesh along an arbitrary
+  plane — that amputates neighbors and leaves torn rims.
+- **Nested parts**: generate the container EMPTY (the reference images
+  must show it empty — e.g. body with hollow hood, no face inside) and
+  the inner part alone (close-up views, full voxel budget). Insert on
+  assembly.
+- Reference images drive this: generate the decomposed refs at concept
+  stage (container-empty views + part close-ups), so each 3D generation
+  never fuses regions that belong to different parts.
+- Texture each part SEPARATELY with its own views (an inserted part is
+  occluded in the assembly — painted alone it gets full coverage), then
+  assemble painted parts.
+- Retopo per part by the type rule (organic → quads; detail/hard →
+  edge-preserving decimate).
+
 ## Construction: part-based, joined, with joint rings
 
 Industry-standard for this tier — parts are separate shells joined into ONE

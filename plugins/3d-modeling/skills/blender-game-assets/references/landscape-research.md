@@ -51,6 +51,43 @@ Rig-XL dataset (14k rigged models); beats commercial auto-riggers.
 Candidate for our STAGE 3 on arbitrary meshes. Tripo/Meshy auto-rig +
 auto walk/run clips; Anything World for animation.
 
+### Motion generation: what exists for NON-human rigs (surveyed 2026-07)
+The humanoid case is solved by **ARDY** (NVIDIA, SIGGRAPH 2026): 27-joint
+core skeleton, 20fps, text + kinematic constraints, real-time, code
+Apache-2.0 and weights under the NVIDIA Open Model Agreement — commercial
+use allowed, unlike our Hunyuan 2.0 shape stage. It also predicts
+per-frame foot contacts. But its own card says it "cannot create cartoon
+motions" and lists foot skating as a known artifact, so it is a
+*performance source* for realistic humanoids, not a style engine.
+
+Usable TODAY for arbitrary skeletons (code + weights exist):
+- **SinMDM** (ICLR 2024): trains on ONE bvh of ANY skeleton and generates
+  unlimited variations of it; `--dataset bvh_general` takes arbitrary
+  rigs, output is bvh, and the README documents the Blender import. Their
+  own teaser is a dragon. This is the best fit for us: hand-author one
+  good cycle on our rig, then multiply it — every variation still has to
+  pass check_anim.py.
+- **Truebones Zoo**: 75+ animals as BVH/FBX, royalty-free for commercial
+  use (redistribution prohibited), free tier available. Not AI — a mocap
+  library. Shortest path for a quadruped, but our rig is bipedal, so it
+  needs a quadruped skeleton first.
+- **Anything World**: commercial cloud API + Blender add-on that auto-rigs
+  and animates quadrupeds, insects, fish, birds.
+
+Papers WITHOUT public code (re-check later, all promising):
+- *How to Move Your Dragon* (2025): released only the annotated Truebones
+  dataset on HF, no model.
+- *X-MoGen* (2025): humans + 114 animal species, shared latent space.
+- *NECromancer* (2026-02): universal motion tokenizer over arbitrary BVH.
+- *SAMoR* (2026-07): cross-topology representation, K=8 part tokens —
+  conceptually "ARDY for any skeleton". Three weeks old at survey time.
+
+**Stylization has no model.** Cascadeur's autoposing is humanoid-only and
+its FAQ warns that stylized proportions produce posing errors. Cartoon
+exaggeration, anticipation and squash stay hand-authored — which is why
+the animation rules in character-forge are the durable asset, not any
+particular checkpoint.
+
 ### Empirical: what actually broke our own rig + animation (2026-07)
 Rated 2/10 twice by the reviewer before it worked. Every failure was
 invisible in a still render and obvious in motion, so the durable fix was

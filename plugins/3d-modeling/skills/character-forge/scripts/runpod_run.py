@@ -40,19 +40,30 @@ def gql(query, variables=None):
     return json.loads(urllib.request.urlopen(req, timeout=120).read())
 
 
+# Tried in order. The 4090 is the cheapest card that fits these models, but
+# SECURE capacity for it runs out and the API then returns a NULL pod
+# instead of an error — which used to crash the orchestrator with a
+# TypeError. Any 24GB+ card runs this pipeline.
+GPUS = ["NVIDIA GeForce RTX 4090", "NVIDIA RTX A6000", "NVIDIA A40",
+        "NVIDIA GeForce RTX 3090", "NVIDIA RTX A5000"]
+
+
 def deploy(mode, name):
     boot = open(os.path.join(HERE, MODES[mode]["boot"]), "rb").read()
     b64 = base64.b64encode(boot).decode()
     args = f"bash -c 'echo {b64} | base64 -d > /workspace/r.py; python /workspace/r.py'"
-    q = ("mutation Deploy($args: String) {\n  podFindAndDeployOnDemand(input: {\n"
-         "    cloudType: SECURE, gpuCount: 1, gpuTypeId: \"NVIDIA GeForce RTX 4090\",\n"
-         f"    name: \"{name}\",\n    imageName: \"{MODES[mode]['image']}\",\n"
-         f"    containerDiskInGb: {MODES[mode]['disk']}, volumeInGb: 0, ports: \"8000/http\",\n"
-         "    dockerArgs: $args\n  }) { id machineId } }")
-    d = gql(q, {"args": args})
-    pod = d["data"]["podFindAndDeployOnDemand"]
-    print(f"pod {pod['id']} on machine {pod['machineId']}")
-    return pod["id"]
+    for gpu in GPUS:
+        q = ("mutation Deploy($args: String) {\n  podFindAndDeployOnDemand(input: {\n"
+             f"    cloudType: SECURE, gpuCount: 1, gpuTypeId: \"{gpu}\",\n"
+             f"    name: \"{name}\",\n    imageName: \"{MODES[mode]['image']}\",\n"
+             f"    containerDiskInGb: {MODES[mode]['disk']}, volumeInGb: 0, ports: \"8000/http\",\n"
+             "    dockerArgs: $args\n  }) { id machineId } }")
+        pod = (gql(q, {"args": args}).get("data") or {}).get("podFindAndDeployOnDemand")
+        if pod:
+            print(f"pod {pod['id']} on machine {pod['machineId']} ({gpu})")
+            return pod["id"]
+        print(f"no capacity for {gpu}, trying next")
+    sys.exit("no GPU capacity on any candidate type — try again later")
 
 
 def http(url, data=None, method="GET", timeout=120):

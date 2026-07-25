@@ -56,9 +56,33 @@ experimental only.
               GATE: pose render — no tears. Thin fins tolerate ~20° of
               summed lateral bend; keep test poses inside that.
 
-6. PREVIEW    python scripts/turntable_gif.py work/char/final.glb work/char/preview.gif
-              → 36-frame 360° GIF, the standard deliverable.
+6. ANIMATE    blender --background --python scripts/animate_character.py -- work/char/painted.glb work/char/anim biped_mecha
+              → anim/{idle,walk,hop,turntable}.mp4 + anim/animated.glb
+              (all actions embedded; imports into Three.js/Unity/Unreal/
+              Godot). Rigs: biped_mecha, biped_chibi. This step also
+              rigs, so it replaces step 5 when you want clips.
+
+7. PREVIEW    blender --background --python scripts/preview_video.py -- work/char/final.glb work/char/preview.mp4
+              → 48-frame 360° MP4. ALWAYS deliver MP4, never GIF
+              (GIF failed to play for the user; MP4 is universal).
 ```
+
+## Animation notes (stage 4)
+
+- Rig has a **Root** bone anchored at the feet, unweighted, parenting
+  Body and the legs: Root translation = hop/bob, Root z-scale =
+  squash & stretch about the ground, and legs hang off Root so body
+  rotation does not drag them.
+- Clip library: `idle` (48f loop, breathing + weight shift), `walk`
+  (32f loop, contralateral limbs + body bob/roll), `hop` (44f, frog
+  arc: anticipation → launch → apex → impact → rebound), `turntable`
+  (48f spin).
+- Review before delivering: render the key frames as PNG stills and
+  inspect the extremes (crouch, launch, apex, contact) — video can hide
+  a tear that a still makes obvious.
+- Blender encodes MP4 itself (`file_format='FFMPEG'`, MPEG4/H264) — no
+  system ffmpeg required, which also means no extra install on the
+  workstation.
 
 ## Hard-won rules (do not relearn these)
 

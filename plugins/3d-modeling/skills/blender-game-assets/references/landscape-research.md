@@ -159,6 +159,17 @@ re-unwraps via xatlas (quad input comes back ~14k tris) and its atlas
 gutter is thin — strong pose deformation exposes seam texels; dilate
 the atlas or keep bends inside the tested range. License caveat applies
 (2.0 non-commercial; 2.1 for production).
+**Second validation: frog mecha (Brawl Stars style)** — the recipe held
+on a hard-surface/character hybrid, with one fork discovered:
+QuadriFlow's uniform grid MUSHES shallow mecha features (the visor) at
+any density — **organic → QuadriFlow quads; mecha/hard-surface →
+DECIMATE ~30k (edge-preserving) + rigid part rig** (mecha joints are
+rigid; triangles don't hurt). Also: decimate ratios can leave
+non-manifold output that makes quadriflow silently no-op — run
+remove_doubles + normals_make_consistent before remeshing, and CHECK the
+quad count (a quads=0 result means it never ran). Paint handled the
+mecha beautifully (glossy eye domes, visor smile, panel shading).
+Full character cost ≈ $0.10-0.15, ~20 min end to end.
 **Reference-driven feature placement** (new core technique): geometry
 probes for eye placement kept latching onto the muzzle (most-protruding
 ≠ feature). Instead, READ the front reference view: threshold the two

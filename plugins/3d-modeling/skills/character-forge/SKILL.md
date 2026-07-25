@@ -60,6 +60,13 @@ experimental only.
               → anim/{idle,walk,hop,turntable}.mp4 + anim/animated.glb
               (all actions embedded; Three.js/Unity/Unreal/Godot ready).
 
+6b. QA GATE   blender --background --python scripts/check_anim.py -- work/char/painted.glb
+              → per-frame floor penetration + IK reach error.
+              GATE: `problems=0`. Do NOT deliver a clip that fails this.
+              Both defects it catches are INVISIBLE in a still frame and
+              obvious in motion, which is exactly how two rejected passes
+              got shipped.
+
 7. PREVIEW    blender --background --python scripts/preview_video.py -- work/char/anim/animated.glb work/char/preview.mp4
               → 360° MP4. ALWAYS deliver MP4, never GIF.
 ```
@@ -92,7 +99,48 @@ experimental only.
 - **Verify visually**: single-joint extreme poses per joint. A tear
   hides in a video and screams in a still.
 
-## Animation rules (the fix for "stiff, nota 2")
+## Animation rules
+
+### Mechanics — the fix for "walkcycle doesn't make sense, weird jump"
+
+These four are structural. No amount of curve polish rescues a clip that
+breaks them, and none of them show up in a still frame — which is how two
+rejected passes got shipped. `check_anim.py` measures all of them.
+
+- **Author FOOT TRAJECTORIES against IK, never joint angles.** Keying hip
+  and knee rotations means no foot is ever locked to the ground: the walk
+  skates and a "crouch" shrinks the character instead of bending its
+  knees. A 2-bone IK per leg, targets parented to a static `Ground` bone,
+  pre-bent knees so the solver can't flip the chain.
+- **Roll the foot about GROUND pivots — a reverse foot.** Rolling around
+  the ankle drives the heel straight through the floor (measured -0.034).
+  Chain `Ground → Heel → Toe → Ball → Ankle` with each pivot head sitting
+  on the floor at a MEASURED sole contact point (`measure_soles` reads
+  them off the mesh; never assume them). Then heel-strike rotates about
+  the heel and toe-off about the toe, and penetration is impossible by
+  construction rather than by tuning. **Airborne, roll the ANKLE instead**
+  — a ground pivot mid-flight swings the ankle away from the hip.
+- **Pose every limb about WORLD axes, never bone-local euler.** Arm bones
+  point down AND outward, so `rotation_euler.x` abducts them sideways
+  instead of swinging them fore/aft — the "arm swing" was a flap. The
+  same trap bites the Root: it points up, so its local Y IS world Z, and
+  `loc=(x, 0, z)` slides the character sideways instead of bobbing it.
+  Use the `wrot()` / `wloc()` converters for everything.
+- **Give the pelvis headroom, and never squash the Root.** Generated
+  characters arrive with near-straight legs at rest, so any upward root
+  motion over-extends the IK and the feet silently unstick. Play every
+  clip from a `BASE_DIP` crouch; in the air raise the feet WITH the body;
+  put squash on the spine, because scaling the Root scales the leg BONES
+  and shrinks them off their planted targets.
+- **Contact frames are the LOWEST point of the bob.** That is where the
+  stance foot reaches furthest forward, so a pelvis that rises there is
+  exactly where the chain runs out of length.
+- **Harden the soles.** Heat skinning leaves Shin influence under the
+  foot, so the sole skews as the shin tilts and a corner dips below the
+  floor even with the target exactly on the ground. A boot does not bend:
+  weight the sole rigidly to its Foot bone, blended over a band.
+
+### Performance — the fix for "stiff, nota 2"
 
 - **Overlapping action is the whole game.** Every bone lags its parent:
   spine +1f, chest +2f, head +3f, forearms +5f, hands/antenna +6f.
@@ -110,8 +158,14 @@ experimental only.
 - **Real walk mechanics**: contact / down / passing / up, knees bending
   on the swing, feet rolling, hips twisting, arms counter-swinging with
   the forearms trailing.
+- **Render on a ground plane with real shadows.** Without a floor there
+  is no way to judge contact and everything reads as floating — that is
+  how the sliding feet survived review in the first place.
 - Blender encodes MP4 itself (`file_format='FFMPEG'`, MPEG4/H264) — no
   system ffmpeg needed on the workstation. Never ship GIF.
+- **Measure before you believe a clip is good.** Judging isolated poses
+  is what let a skating walk and a broken jump through; run the QA gate
+  and read the numbers.
 
 ## Hard-won rules (do not relearn these)
 

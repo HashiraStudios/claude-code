@@ -51,6 +51,37 @@ Rig-XL dataset (14k rigged models); beats commercial auto-riggers.
 Candidate for our STAGE 3 on arbitrary meshes. Tripo/Meshy auto-rig +
 auto walk/run clips; Anything World for animation.
 
+### Empirical: what actually broke our own rig + animation (2026-07)
+Rated 2/10 twice by the reviewer before it worked. Every failure was
+invisible in a still render and obvious in motion, so the durable fix was
+a numeric gate (`character-forge/scripts/check_anim.py`), not more taste.
+
+1. **GLB seam verts tear the mesh.** A GLB duplicates vertices at every
+   UV/normal seam (this asset: 425 islands, 11k non-manifold edges). The
+   twins get different weights and rip apart when posed.
+   `remove_doubles(dist=1e-4)` before binding; UVs are per-loop so the
+   texture is untouched. It also took bone-heat orphans from 156 to 0.
+2. **Binary region masks tear at the boundary.** Attenuating heat weights
+   by an anatomical mask is right, but the mask needs a smoothstep band
+   (~0.07) or you have simply re-created a hard weight edge. Smoothing
+   re-bleeds, so mask → smooth → mask.
+3. **Keying joint angles instead of foot trajectories** = feet that never
+   touch anything. The walk skates and a crouch shrinks the character.
+   2-bone IK per leg + targets on a static Ground bone.
+4. **Rolling the foot about the ankle** drives the heel through the floor
+   (-0.034). Use a reverse foot: Ground→Heel→Toe→Ball→Ankle with pivots
+   on MEASURED sole contact points. Airborne, roll the ankle instead.
+5. **Bone-local euler is a lie on a diagonal bone.** `rotation_euler.x`
+   on an arm that points down-and-outward abducts it sideways; on a Root
+   that points up, `loc.z` translates the character *forward*. Author
+   rotations and translations about WORLD axes and convert per bone.
+6. **Straight-at-rest legs have zero upward headroom.** Any positive root
+   z over-extends the IK and the feet quietly unstick. Play clips from a
+   base crouch; raise the feet with the body in the air; never squash the
+   Root (it scales the leg bones off their targets).
+7. **Render on a floor with shadows.** With no ground plane there is no
+   way to see planting, which is how the skating survived review.
+
 ## Empirical: Cube 3D on CPU (tested 2026-07 in this environment)
 Runs end-to-end on 4 cores / 15GB RAM: ~10 min/asset including the 7GB
 model load (CLIP text encoder auto-downloads from HF; pymeshlab absent →

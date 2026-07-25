@@ -1,6 +1,6 @@
 ---
 name: character-forge
-description: Production pipeline for game-ready stylized 3D characters from a text idea or a reference image. Generates concept + orthographic views (gpt-image-2), 3D shape (Hunyuan3D-2mv on RunPod), retopology (organic/hard-surface fork), PBR textures (Hunyuan3D-2.1 Paint), spatial-group rig, pose test and 360 GIF preview. Use when the user wants a complete character/creature/mecha model for a game, from scratch or from a reference image. Single-mesh characters only (multi-part assembly is experimental).
+description: Production pipeline for game-ready stylized 3D characters from a text idea or a reference image. Generates concept + orthographic views (gpt-image-2), 3D shape (Hunyuan3D-2mv on RunPod), retopology (organic/hard-surface fork), PBR textures (Hunyuan3D-2.1 Paint), chain rig with deformation gates, animation clips and MP4 previews. Use when the user wants a complete character/creature/mecha model for a game, from scratch or from a reference image. Single-mesh characters only (multi-part assembly is experimental).
 ---
 
 # Character Forge — idea → game-ready character in ~25 min / ~US$0.15
@@ -17,7 +17,6 @@ experimental only.
 - `OPENAI_API_KEY` env var (gpt-image-2 access)
 - `RUNPOD_API_KEY` env var (on-demand GPU, SECURE cloud; each character
   costs ~US$0.10-0.15 across 2 pods, auto-terminated)
-- Python 3 with `pillow` (GIF assembly): `pip install pillow`
 - License note: Hunyuan3D-2mv (shape) is **non-commercial** (2.0
   family); Hunyuan3D-2.1 (paint/PBR) has the community license. For a
   fully commercial pipeline, swap the shape stage to 2.1 single-image
@@ -50,24 +49,18 @@ experimental only.
               GLB (benign bpy exit segfault) — validate by artifact
               size, not exit status.
 
-5. RIG        blender --background --python scripts/rig_character.py -- work/char/painted.glb work/char/final.glb biped_chibi
-              configs: biped_chibi (dragon-like: head/arms/legs/tail),
-              biped_mecha (rigid parts, no tail), quadruped (stub).
-              GATE: pose render — no tears. Thin fins tolerate ~20° of
-              summed lateral bend; keep test poses inside that.
-
-6. RIG        blender --background --python scripts/autorig.py -- work/char/painted.glb work/char
+5. RIG        blender --background --python scripts/autorig.py -- work/char/painted.glb work/char
               → chained skeleton on MEASURED pivots + heat skinning +
               soft anatomical masks + 6 deformation-test renders.
               GATE: open deform_*.png. No tears, no stretched membranes,
               no collapsed joints. The printed stats must show most
               vertices blended across 2+ bones and very few at 1.0.
 
-7. ANIMATE    blender --background --python scripts/animate_pro.py -- work/char/painted.glb work/char/anim
+6. ANIMATE    blender --background --python scripts/animate_pro.py -- work/char/painted.glb work/char/anim
               → anim/{idle,walk,hop,turntable}.mp4 + anim/animated.glb
               (all actions embedded; Three.js/Unity/Unreal/Godot ready).
 
-8. PREVIEW    blender --background --python scripts/preview_video.py -- work/char/final.glb work/char/preview.mp4
+7. PREVIEW    blender --background --python scripts/preview_video.py -- work/char/anim/animated.glb work/char/preview.mp4
               → 360° MP4. ALWAYS deliver MP4, never GIF.
 ```
 

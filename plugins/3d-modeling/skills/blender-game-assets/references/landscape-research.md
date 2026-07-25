@@ -51,6 +51,18 @@ Rig-XL dataset (14k rigged models); beats commercial auto-riggers.
 Candidate for our STAGE 3 on arbitrary meshes. Tripo/Meshy auto-rig +
 auto walk/run clips; Anything World for animation.
 
+## Empirical: Cube 3D on CPU (tested 2026-07 in this environment)
+Runs end-to-end on 4 cores / 15GB RAM: ~10 min/asset including the 7GB
+model load (CLIP text encoder auto-downloads from HF; pymeshlab absent →
+postprocess skipped; marching cubes falls back to skimage). Verdict at
+resolution_base 4.0: SHAPE understanding is real (a barrel with stave
+hints), but the mesh is triangulated marching-cubes output — all tris,
+zero edge flow, lumpy surface. Below this skill's procedural quality for
+anything buildable by code. Cube/Hunyuan-class shape models only pay off
+for ORGANICS, at high resolution, followed by MeshAnything-style artist
+topology conversion — a GPU (e.g. RunPod, API reachable from here)
+combo: shape gen → artist-mesh conversion → this skill's stages 2–4.
+
 ## What this skill should borrow next
 1. MeshAnything-style conditioning as a bridge: image-to-3D for organic
    blockouts → artist-mesh conversion → our texture/rig/anim stages.

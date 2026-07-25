@@ -88,10 +88,18 @@ def run(mode, uploads, out_path):
                     return False
             print(f"{time.strftime('%H:%M:%S')} {st}")
             if st == spec["await_status"] and not uploaded:
-                for remote, local in uploads.items():
-                    put_file(base, remote, local)
-                http(f"{base}/up/done.txt", data=b"ok", method="PUT", timeout=30)
-                uploaded = True
+                # Uploads are the only large payloads here and the proxy DOES
+                # reset them mid-handshake. Never let that kill the run: the
+                # pod is still waiting, so a failure just retries next poll.
+                # (An unguarded upload once crashed the orchestrator, whose
+                # finally-block then terminated a perfectly healthy pod.)
+                try:
+                    for remote, local in uploads.items():
+                        put_file(base, remote, local)
+                    http(f"{base}/up/done.txt", data=b"ok", method="PUT", timeout=30)
+                    uploaded = True
+                except Exception as e:
+                    print(f"  upload failed ({e}) — retrying next poll")
             if st == "done" or st.startswith("FAIL"):
                 try:
                     data = http(f"{base}/{spec['result']}", timeout=600)

@@ -24,7 +24,7 @@ sys.argv = [sys.argv[0], "--", _argv[0], os.path.dirname(_argv[0]) or "."]
 exec(open(os.path.join(_here, "animate_pro.py")).read().split(
     chr(10) + 'if __name__ == "__main__":')[0])
 
-TOL_Z, TOL_REACH = 0.012, 0.010
+TOL_Z, TOL_REACH, MIN_TRAVEL = 0.012, 0.010, 0.05
 obj, rig = build()
 scene, cam = setup_stage()
 bad = 0
@@ -32,14 +32,32 @@ for clip_name in ("walk", "hop", "idle"):
     c, L = CLIPS[clip_name]()
     c.apply(rig)
     print(f"--- {clip_name} ---")
+    # IS IT EVEN MOVING? A rig sitting in its rest pose scores PERFECTLY on
+    # contact — the sole is exactly on the floor in every frame — so a
+    # silent animation failure reads as a flawless result. Measure the path
+    # a landmark actually travels before trusting any other number.
+    _prev, _travel = None, 0.0
+    for f in range(1, L + 1):
+        scene.frame_set(f)
+        p = rig.matrix_world @ rig.pose.bones["Hand.L"].tail
+        if _prev is not None:
+            _travel += (p - _prev).length
+        _prev = p
+    moving = _travel > MIN_TRAVEL
+    bad += 0 if moving else 1
+    print(f"  travel Hand.L = {_travel:.3f} {'ok' if moving else 'STATIC — clip is dead'}")
     for f in range(1, L + 1, 2):
         scene.frame_set(f)
         dg = bpy.context.evaluated_depsgraph_get()
         ev = obj.evaluated_get(dg)
         me = ev.to_mesh()
-        zmin = min(v.co.z for v in me.vertices)
-        zl = min((v.co.z for v in me.vertices if v.co.x < -0.03), default=9)
-        zr = min((v.co.z for v in me.vertices if v.co.x > 0.03), default=9)
+        # to_mesh() is OBJECT-LOCAL: without matrix_world this silently
+        # measures the wrong space the moment anything moves the object.
+        M = ev.matrix_world
+        co = [M @ v.co for v in me.vertices]
+        zmin = min(p.z for p in co)
+        zl = min((p.z for p in co if p.x < -0.03), default=9)
+        zr = min((p.z for p in co if p.x > 0.03), default=9)
         ev.to_mesh_clear()
         reach = max((rig.pose.bones[f"Foot.{s}"].head
                      - rig.pose.bones[f"IK.Ankle.{s}"].head).length

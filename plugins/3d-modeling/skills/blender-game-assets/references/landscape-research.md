@@ -82,6 +82,31 @@ Papers WITHOUT public code (re-check later, all promising):
 - *SAMoR* (2026-07): cross-topology representation, K=8 part tokens —
   conceptually "ARDY for any skeleton". Three weeks old at survey time.
 
+### Empirical: SinMDM on our frog rig — INCONCLUSIVE, blocked by BVH
+Ran it end to end (RunPod, ~US$0.10). The model side worked: `bvh_general`
+accepted our 20-bone rig with no humanoid assumptions, training converged
+(loss 0.00053, 30k steps in 19 min on an A6000), and it produced 8 samples
+of 8s with real motion (70° peak channel range vs 86° in the source).
+
+What blocked the evaluation was the FORMAT, not the model: **Blender's BVH
+export→import round trip does not preserve our rig's joint positions.**
+Measured against the authored animation, world joint error grows down every
+chain — spine ~0.015, clavicle 0.20, upper arm 0.55, forearm 0.70, hand
+0.89 on a character 1.0 tall. BVH assumes every bone points at its child;
+our rig has gaps and measured pivots that do not, so the exporter's offsets
+and the importer's reconstruction disagree and the error compounds per
+joint. The imported character collapses. (A separate, smaller bug hides
+underneath: Blender's BVH *exporter* writes Z-up while its *importer*
+defaults to Y-up — import with `axis_forward='-Y', axis_up='Z'`. Fixing
+that alone is NOT enough.)
+
+Any verdict on SinMDM's motion quality measured through this pipe is void.
+To evaluate it properly, write a custom BVH writer/reader that encodes each
+bone's delta from its own rest — exact by construction regardless of where
+bones point — with "re-import our own animation, expect zero error" as the
+acceptance test. That bridge would serve any external motion source
+(Truebones, mocap), so it is worth building when there is a reason to.
+
 **Stylization has no model.** Cascadeur's autoposing is humanoid-only and
 its FAQ warns that stylized proportions produce posing errors. Cartoon
 exaggeration, anticipation and squash stay hand-authored — which is why

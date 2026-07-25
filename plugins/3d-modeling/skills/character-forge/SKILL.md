@@ -166,6 +166,18 @@ rejected passes got shipped. `check_anim.py` measures all of them.
 - **Measure before you believe a clip is good.** Judging isolated poses
   is what let a skating walk and a broken jump through; run the QA gate
   and read the numbers.
+- **A suspiciously perfect number is a bug report.** A rig stuck in its
+  rest pose scores FLAWLESS contact — the sole sits exactly on the floor
+  in every frame — so a dead clip reads as a perfect one. That is why the
+  gate measures travel first: constant metrics mean nothing until you
+  have proven the thing is moving. Same trap in reverse: `to_mesh()`
+  returns OBJECT-LOCAL coordinates, so a contact check without
+  `matrix_world` keeps reporting the old floor height after anything
+  moves the object.
+- **Blender's BVH round trip is LOSSY for this rig** — joint error
+  reaches 0.89 on a 1.0-tall character because BVH assumes bones point at
+  their children and ours do not. Do not import external motion through
+  it without a custom writer/reader; see landscape-research.md.
 
 ## Hard-won rules (do not relearn these)
 

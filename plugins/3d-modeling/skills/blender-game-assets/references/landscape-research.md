@@ -63,6 +63,48 @@ for ORGANICS, at high resolution, followed by MeshAnything-style artist
 topology conversion — a GPU (e.g. RunPod, API reachable from here)
 combo: shape gen → artist-mesh conversion → this skill's stages 2–4.
 
+## Empirical: Cube 3D on RunPod GPU (tested 2026-07, RTX 3090)
+Full quality run at resolution_base 8.0 (vs 4.0 on CPU): ~26s token
+generation + ~7s geometry extraction per asset; whole pod lifecycle
+(boot → pip → 7GB weights → 2 assets → fetch → auto-terminate) ≈ 9 min,
+total cost ≈ $0.05/run. Results:
+- **Creature** ("stylized cartoon dragon, big head, chunky body"):
+  269,852 tris. DESIGN is genuinely good — coherent chibi proportions,
+  horns/spikes/tail all intentional. The model designs like a stylist;
+  only the tessellation is wrong.
+- **Barrel**: 548,750 tris that read as a clean low-poly barrel
+  over-tessellated — confirming Cube emits near-low-poly DESIGNS through
+  a dense marching-cubes surface.
+- **Decimation test**: Blender DECIMATE to 3,000 tris + shade_smooth
+  (40°) preserved the creature's silhouette and features — already a
+  usable stage-1 blockout at game budget without MeshAnything. Proper
+  path for hero assets remains artist-mesh conversion on GPU.
+Verdict: GPU generation JUSTIFIES for organics (creatures, characters,
+nature props) as a stage-1 supplier: Cube shape → decimate (fast path)
+or MeshAnything (quality path) → this skill's stages 2–4. Hard-surface
+props stay procedural (our topology-by-construction beats decimated
+marching cubes there).
+
+### RunPod orchestration pattern (hard-won, reuse verbatim)
+1. GraphQL `podFindAndDeployOnDemand` with an OFFICIAL runpod/pytorch
+   image (community images may never start; devel images too big).
+2. Those images lack git/curl — fetch everything with python urllib
+   (repo tarballs, weights via huggingface_hub).
+3. Put the ENTIRE boot script in base64 and decode inside the pod
+   (`echo B64 | base64 -d | python3 -`) — kills all shell-quoting bugs
+   in dockerArgs (json-in-bash quotes caused a crash-loop).
+4. Write `status.txt` after every step and serve the workdir with
+   `python -m http.server 8000` → poll via
+   `https://{podId}-8000.proxy.runpod.net/status.txt`.
+5. Wrap each generation in subprocess with capture_output and dump
+   stdout/stderr to `err-{name}.txt` — fetch it BEFORE terminating, or
+   failures are undebuggable (a truncated CalledProcessError cost a
+   round).
+6. Pin transformers==4.44.2 for torch 2.4 images (newer transformers
+   imports DTensor, torch≥2.5 only).
+7. Monitor script polls status, fetches artifacts on done/fail, then
+   ALWAYS terminates the pod (deadline-bounded) — no orphan billing.
+
 ## What this skill should borrow next
 1. MeshAnything-style conditioning as a bridge: image-to-3D for organic
    blockouts → artist-mesh conversion → our texture/rig/anim stages.

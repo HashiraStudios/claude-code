@@ -126,6 +126,26 @@ or keep Cube3D (Apache-ish CUBE license) as the safe supplier.
 Supplier ranking for organics: Hunyuan3D-2 (concept image) > Cube3D
 (text) >> MeshAnything V2 (fragmented).
 
+## Empirical: Hunyuan3D-2mv MULTIVIEW (tested 2026-07, RTX 4090) — the pipeline
+The open-source MV model takes up to 4 views with FIXED keys
+front/left/back/right (dict input; view order = front, +90° cw, back,
++270°). Feeding 4 gpt-image-2 views generated from the approved concept
+(one edits call per view; spell out expression/feature consistency in
+each prompt) at octree_resolution=512 (~1.27M tris ≈ the site's
+"1.5M faces" mode) produced the best mesh of every test: fully
+symmetric, clean single spike row, sculpted eye sockets, individual
+claws. Generation ~3 min on a 4090 (~$0.04). gpt-image-2 view quality
+is far above gpt-image-1 (near mirror-perfect profiles) — use it for
+all concept/view generation.
+**Reference-driven feature placement** (new core technique): geometry
+probes for eye placement kept latching onto the muzzle (most-protruding
+≠ feature). Instead, READ the front reference view: threshold the two
+big dark clusters on the upper face, map image→mesh coords via the two
+character bounding boxes (both normalized identically), raycast
+front-to-back at that (x, z) for the surface point+normal, place the
+decal there. The reference sheet knows WHERE features are; the mesh
+only answers the surface question.
+
 ### RunPod orchestration pattern (hard-won, reuse verbatim)
 1. GraphQL `podFindAndDeployOnDemand` with an OFFICIAL runpod/pytorch
    image (community images may never start; devel images too big).

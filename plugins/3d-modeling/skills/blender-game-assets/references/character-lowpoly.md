@@ -38,14 +38,20 @@ motorcycle, on a creature.)
   which masses exist in the drawing but not in the mesh?). Matching
   positions/proportions while missing sculpted forms is a FAIL.
 - **For organic characters, prefer a generated base**: best supplier is
-  Hunyuan3D-2 fed the APPROVED CONCEPT IMAGE (returns a concept-faithful
-  sculpt with eyes/brow/mouth in-mesh; license: 2.0 non-commercial, use
-  2.1 for commercial) → decimate ~12k tris; fallback Cube3D (text
-  prompt, permissive license) → decimate ~3.5k. MeshAnything V2 tested
-  and rejected (fragments complex creatures). The skill adds eye decals,
-  region masks, texture, rig. Procedural construction remains the path
-  for hard-surface and for part-based humanoids (below), where
-  boxes/cylinders + joint rings are the idiom.
+  **Hunyuan3D-2mv** fed 4 gpt-image-2 views (front/left/back/right,
+  generated from the approved concept, octree_resolution=512) →
+  decimate ~12k tris — fully symmetric, concept-faithful sculpt with
+  eye sockets, brow, mouth, claws in-mesh. Single-image Hunyuan3D-2 is
+  the quick variant; Cube3D (text prompt, permissive license) the
+  license-safe fallback; MeshAnything V2 tested and rejected (fragments
+  complex creatures). License: Hunyuan 2.0 non-commercial — use 2.1 for
+  commercial. The skill adds EYE DECALS placed by READING the front
+  reference view (threshold the dark eye clusters, map image→mesh via
+  the two bounding boxes, raycast to the surface — geometry probes latch
+  onto the muzzle), thin-feature region masks, painted-bake, spatial-
+  group rig. Procedural construction remains the path for hard-surface
+  and part-based humanoids (below), where boxes/cylinders + joint rings
+  are the idiom.
 
 ## Construction: part-based, joined, with joint rings
 

@@ -85,6 +85,23 @@ or MeshAnything (quality path) → this skill's stages 2–4. Hard-surface
 props stay procedural (our topology-by-construction beats decimated
 marching cubes there).
 
+## Empirical: MeshAnything V2 on RunPod GPU (tested 2026-07, RTX 4090)
+Full pipeline proven end-to-end (pc_normal 8192 pts of the Cube creature
+→ 613-face artist mesh in ~150s), but the RESULT is unusable for complex
+organics: fragmented, non-watertight shards — tail with spikes survived,
+body/head mostly missing. This is the documented V2 limitation (1600-face
+cap; input must be representable in few faces), not a pipeline bug.
+VERDICT: for creatures, the production path is **Cube3D → DECIMATE
+(~3.5k tris) + shade_smooth → skill stages** — the decimated base kept
+every feature and took a full texture/rig pass cleanly. Keep MA V2 only
+as a candidate for simple single-mass props, or revisit with
+MeshAnything-class successors trained with higher face caps.
+Two hard-won compat notes: the flash-attn requirement is real — install
+the PREBUILT wheel from Dao-AILab GitHub releases (cu12/torch2.4/cp311,
+seconds, no nvcc); an eager-attention rewrite generated NaN faces (one
+surviving triangle) despite RC=0 — silently-degenerate output, so always
+assert output size, not just exit code.
+
 ### RunPod orchestration pattern (hard-won, reuse verbatim)
 1. GraphQL `podFindAndDeployOnDemand` with an OFFICIAL runpod/pytorch
    image (community images may never start; devel images too big).

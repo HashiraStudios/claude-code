@@ -170,6 +170,35 @@ remove_doubles + normals_make_consistent before remeshing, and CHECK the
 quad count (a quads=0 result means it never ran). Paint handled the
 mecha beautifully (glossy eye domes, visor smile, panel shading).
 Full character cost ≈ $0.10-0.15, ~20 min end to end.
+**PBR via Hunyuan3D-2.1** (round 28, WORKS — commercial license):
+`Hunyuan3DPaintPipeline(Hunyuan3DPaintConfig(max_num_view=8,
+resolution=768))` on the retopo mesh + concept ref → GLB with 2K base
+color + 2K packed metallic-roughness (glTF B=metal G=rough). Real
+material split: metallic armor vs matte rubber vs glossy eyes. Boot
+recipe: devel image, 2.1 pins (transformers 4.46, diffusers 0.30,
+pytorch-lightning 1.9.5), compile custom_rasterizer + mesh_painter,
+wget RealESRGAN_x4plus, pip `bpy==4.2.0` (2.1 hard-imports bpy;
+4.2.0 is the first py3.11 wheel) + `realesrgan basicsr` + the GL/X libs
+for headless bpy, and put the repo ROOT on sys.path so torchvision_fix
+loads (it patches basicsr's functional_tensor import).
+**Part-swap for detail-critical regions** (the Gundam head technique,
+proven on the kigurumi kid): when a region fuses (face+hair+teeth
+sharing one voxel grid), generate THAT PART alone from dedicated
+close-up views (full octree budget on the part), retopo it by the
+DETAIL rule (edge-preserving decimate — quadriflow mushes hair/teeth),
+then merge: no naive z-plane cut (amputates shoulders) — delete the old
+part's CORE by footprint (full cut above the dome line, radius-limited
+cylinder below, floor high enough to spare the chest), keep
+neighboring geometry, oversize the new part ~6% so it covers the stump,
+Paint the combined mesh (it re-renders/re-unwraps, interior faces are
+occluded and harmless). Gotchas: glb parts can contain stray islands —
+keep only the largest connected component; Blender OBJ round-trip needs
+explicit `forward_axis='NEGATIVE_Z', up_axis='Y'` on import + apply
+rotation, or vertex coords stay Y-up and every z-predicate misses.
+**360° GIF preview** (standard deliverable): 36 EEVEE frames of the
+object spinning under the beauty rig (~3 min at 512px) → Pillow
+adaptive-palette GIF (~35KB). Blender ships no GIF writer and the env
+has no ffmpeg — assemble with PIL in a venv.
 **Reference-driven feature placement** (new core technique): geometry
 probes for eye placement kept latching onto the muzzle (most-protruding
 ≠ feature). Instead, READ the front reference view: threshold the two

@@ -23,6 +23,21 @@ BASE_STYLE = ("Full body, whole character fully visible with margin, feet on the
               "background, no text, no labels, no shadows, same colors, same "
               "expression and same proportions as the input character")
 
+# Vehicles and props need their own view language: the character wording
+# ("arms at the sides", "same expression", "no face on the back") either
+# means nothing here or actively misleads the generator.
+VIEW_SPECS_VEHICLE = {
+    "front": "straight-on FRONT view: the camera is directly in front of the vehicle, looking at the grille and headlights, perfectly symmetrical, both front wheels equally visible",
+    "left": "straight-on LEFT SIDE profile view: the camera is level with the vehicle's left flank, the vehicle points LEFT, both left wheels fully visible and round",
+    "back": "straight-on BACK view: the camera is directly behind the vehicle, showing ONLY rear features — tailgate, rear bumper, tail lights, spare wheel if present — never a grille or headlights",
+    "right": "straight-on RIGHT SIDE profile view: the camera is level with the vehicle's right flank, the vehicle points RIGHT, both right wheels fully visible and round",
+}
+BASE_STYLE_VEHICLE = ("The whole vehicle fully visible with margin, wheels resting on "
+                      "the ground line, strictly orthographic with no perspective and "
+                      "no camera tilt, plain pure white background, no text, no labels, "
+                      "no logos, no badges, no shadows, exactly the same colors, "
+                      "proportions and details as the input vehicle")
+
 
 def _multipart(fields, files):
     boundary = "----charforge"
@@ -67,7 +82,15 @@ def main():
     ap.add_argument("--views-only", action="store_true",
                     help="skip concept generation, reuse <out>/concept.png")
     ap.add_argument("--only", help="regenerate a single view (front/left/back/right)")
+    ap.add_argument("--kind", choices=["character", "vehicle"], default="character",
+                    help="which view language to use; vehicles/props are not characters")
     args = ap.parse_args()
+    specs = VIEW_SPECS_VEHICLE if args.kind == "vehicle" else VIEW_SPECS
+    style = BASE_STYLE_VEHICLE if args.kind == "vehicle" else BASE_STYLE
+    subject = "vehicle" if args.kind == "vehicle" else "character"
+    # a car is wider than it is tall; the portrait concept canvas that suits
+    # a standing character wastes half the frame on one
+    concept_size = "1536x1024" if args.kind == "vehicle" else "1024x1536"
     os.makedirs(f"{args.out}/views", exist_ok=True)
     concept_path = f"{args.out}/concept.png"
 
@@ -75,19 +98,19 @@ def main():
         print("concept...")
         if args.reference:
             data = call("edits", {"model": "gpt-image-2", "prompt": args.prompt,
-                                  "size": "1024x1536", "n": "1"},
+                                  "size": concept_size, "n": "1"},
                         {"image[]": ("ref.png", open(args.reference, "rb").read())})
         else:
             data = call("generations", {"model": "gpt-image-2", "prompt": args.prompt,
-                                        "size": "1024x1536", "n": 1})
+                                        "size": concept_size, "n": 1})
         open(concept_path, "wb").write(data)
         print(f"  -> {concept_path} ({len(data)} bytes)")
 
     ref = open(concept_path, "rb").read()
-    views = [args.only] if args.only else list(VIEW_SPECS)
+    views = [args.only] if args.only else list(specs)
     for v in views:
         print(f"view {v}...")
-        p = (f"Render this exact character. VIEW: {VIEW_SPECS[v]}. {BASE_STYLE}")
+        p = (f"Render this exact {subject}. VIEW: {specs[v]}. {style}")
         data = call("edits", {"model": "gpt-image-2", "prompt": p,
                               "size": "1024x1024", "n": "1"},
                     {"image[]": ("concept.png", ref)})

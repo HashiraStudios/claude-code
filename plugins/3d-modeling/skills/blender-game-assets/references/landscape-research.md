@@ -146,6 +146,19 @@ mesh symmetry → pure-quad uniform topology (7.2k quads on the dragon,
 zero triangles, all features held). Not PolyGen's feature-aligned edge
 loops, but real game topology: deformation-ready and subdividable —
 replaces triangle decimation as the standard retopo stage.
+**Hunyuan3D-Paint multiview ON the retopo mesh** (round 21, WORKS):
+the full site workflow is now reproducible open-source — MV shape →
+QuadriFlow quads → Paint turbo conditioned on the same gpt-image-2
+views (front/left/back list, example order) → textured GLB with painted
+eyes/iris, belly segments, shaded claws. Requires the DEVEL pytorch
+image (nvcc): compile custom_rasterizer (CUDAExtension,
+TORCH_CUDA_ARCH_LIST=8.9) + differentiable_renderer mesh_processor;
+pip adds diffusers==0.32.0 + xatlas on top of the shape stack. On a
+fast SECURE 4090 the whole round ran in ~5 min (~$0.06). Paint
+re-unwraps via xatlas (quad input comes back ~14k tris) and its atlas
+gutter is thin — strong pose deformation exposes seam texels; dilate
+the atlas or keep bends inside the tested range. License caveat applies
+(2.0 non-commercial; 2.1 for production).
 **Reference-driven feature placement** (new core technique): geometry
 probes for eye placement kept latching onto the muzzle (most-protruding
 ≠ feature). Instead, READ the front reference view: threshold the two

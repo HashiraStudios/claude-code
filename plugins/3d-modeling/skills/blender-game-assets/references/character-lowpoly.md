@@ -37,11 +37,15 @@ motorcycle, on a creature.)
   feature-by-feature against the concept (checklist the concept's shapes:
   which masses exist in the drawing but not in the mesh?). Matching
   positions/proportions while missing sculpted forms is a FAIL.
-- **For organic characters, prefer a generated base**: the production
-  path is Cube3D (GPU) shape → MeshAnything/decimate to artist mesh →
-  skill adds measured features, accessories, texture, rig. Procedural
-  construction remains the path for hard-surface and for part-based
-  humanoids (below), where boxes/cylinders + joint rings are the idiom.
+- **For organic characters, prefer a generated base**: best supplier is
+  Hunyuan3D-2 fed the APPROVED CONCEPT IMAGE (returns a concept-faithful
+  sculpt with eyes/brow/mouth in-mesh; license: 2.0 non-commercial, use
+  2.1 for commercial) → decimate ~12k tris; fallback Cube3D (text
+  prompt, permissive license) → decimate ~3.5k. MeshAnything V2 tested
+  and rejected (fragments complex creatures). The skill adds eye decals,
+  region masks, texture, rig. Procedural construction remains the path
+  for hard-surface and for part-based humanoids (below), where
+  boxes/cylinders + joint rings are the idiom.
 
 ## Construction: part-based, joined, with joint rings
 

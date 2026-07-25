@@ -102,6 +102,30 @@ seconds, no nvcc); an eager-attention rewrite generated NaN faces (one
 surviving triangle) despite RC=0 — silently-degenerate output, so always
 assert output size, not just exit code.
 
+## Empirical: Hunyuan3D-2 on RunPod GPU (tested 2026-07, RTX 4090) — WINNER
+Image-to-3D from the APPROVED CONCEPT ART (not a text prompt) — closes
+the concept-first loop: the mesh comes back faithful to the sheet.
+Fed the dragon concept (gpt-image-1 output, rembg in-pod): 938k-tri
+sculpt with EYES+eyelids, brow ridges, carved smile, nostrils, belly
+button, individual fingers/toes — every face feature Cube3D lacked.
+~2 min generation incl. 5GB weight download; whole pod ≈ 4 min ≈ $0.05.
+Production recipe: decimate to ~12k tris (6k eats the eye topology) +
+shade_smooth 42° → thin-feature masks + belly ellipse + majority-vote
+border smoothing → EYES AS DECALS (flattened dark spheres snapped to the
+eyeball bulges via a front raycast-grid apex finder — face-painting the
+eye region gives blotchy borders at any budget) → painted_bake → spatial
+groups + smoothed weights rig. Thin tail fins tolerate ~20° of summed
+lateral bend across the 3-bone chain; beyond that they shear.
+Compat: pin transformers==4.44.2 (torch 2.4 DTensor trap AGAIN),
+apt install libgl1 (pymeshlab hard-imports libGL in Hunyuan, unlike
+Cube's soft import), shapegen needs NO custom CUDA compile (texgen does —
+skip it, our texture ladder is better for stylized anyway).
+LICENSE: Hunyuan3D-2.0 is NON-COMMERCIAL; 2.1 ships a community license
+(commercial-friendlier, MAU threshold) — for a commercial game, use 2.1
+or keep Cube3D (Apache-ish CUBE license) as the safe supplier.
+Supplier ranking for organics: Hunyuan3D-2 (concept image) > Cube3D
+(text) >> MeshAnything V2 (fragmented).
+
 ### RunPod orchestration pattern (hard-won, reuse verbatim)
 1. GraphQL `podFindAndDeployOnDemand` with an OFFICIAL runpod/pytorch
    image (community images may never start; devel images too big).

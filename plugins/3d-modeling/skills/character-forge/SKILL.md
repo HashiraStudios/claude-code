@@ -56,33 +56,69 @@ experimental only.
               GATE: pose render — no tears. Thin fins tolerate ~20° of
               summed lateral bend; keep test poses inside that.
 
-6. ANIMATE    blender --background --python scripts/animate_character.py -- work/char/painted.glb work/char/anim biped_mecha
-              → anim/{idle,walk,hop,turntable}.mp4 + anim/animated.glb
-              (all actions embedded; imports into Three.js/Unity/Unreal/
-              Godot). Rigs: biped_mecha, biped_chibi. This step also
-              rigs, so it replaces step 5 when you want clips.
+6. RIG        blender --background --python scripts/autorig.py -- work/char/painted.glb work/char
+              → chained skeleton on MEASURED pivots + heat skinning +
+              soft anatomical masks + 6 deformation-test renders.
+              GATE: open deform_*.png. No tears, no stretched membranes,
+              no collapsed joints. The printed stats must show most
+              vertices blended across 2+ bones and very few at 1.0.
 
-7. PREVIEW    blender --background --python scripts/preview_video.py -- work/char/final.glb work/char/preview.mp4
-              → 48-frame 360° MP4. ALWAYS deliver MP4, never GIF
-              (GIF failed to play for the user; MP4 is universal).
+7. ANIMATE    blender --background --python scripts/animate_pro.py -- work/char/painted.glb work/char/anim
+              → anim/{idle,walk,hop,turntable}.mp4 + anim/animated.glb
+              (all actions embedded; Three.js/Unity/Unreal/Godot ready).
+
+8. PREVIEW    blender --background --python scripts/preview_video.py -- work/char/final.glb work/char/preview.mp4
+              → 360° MP4. ALWAYS deliver MP4, never GIF.
 ```
 
-## Animation notes (stage 4)
+## Rigging rules (learned the hard way — a 2/10 rig taught these)
 
-- Rig has a **Root** bone anchored at the feet, unweighted, parenting
-  Body and the legs: Root translation = hop/bob, Root z-scale =
-  squash & stretch about the ground, and legs hang off Root so body
-  rotation does not drag them.
-- Clip library: `idle` (48f loop, breathing + weight shift), `walk`
-  (32f loop, contralateral limbs + body bob/roll), `hop` (44f, frog
-  arc: anticipation → launch → apex → impact → rebound), `turntable`
-  (48f spin).
-- Review before delivering: render the key frames as PNG stills and
-  inspect the extremes (crouch, launch, apex, contact) — video can hide
-  a tear that a still makes obvious.
+- **WELD FIRST.** A GLB duplicates vertices at every UV/normal seam.
+  The twins get different weights and TEAR APART when posed (this asset
+  imported as 425 disconnected islands / 11k non-manifold edges).
+  `remove_doubles(dist=1e-4)` before binding fixed the head ripping off
+  the body — and it also let bone-heat succeed with ZERO orphan verts.
+  Blender stores UVs per loop, so welding never harms the texture.
+- **One bone per limb is not a rig.** Chains are mandatory:
+  Clav → UpperArm → Forearm → Hand, Thigh → Shin → Foot, and a spine
+  Hips → Spine → Chest → Head. Without an elbow/knee the limb can only
+  swing rigidly — the #1 source of "stiff".
+- **Measure the pivots, never guess them.** Sample cross-sections along
+  each limb axis: joints are the local minima of the radius profile
+  (hard-surface joints literally narrow there). See the analysis block
+  in autorig.py.
+- **Skin with bone-heat, then LOCALIZE.** Heat gives smooth falloff but
+  bleeds — an arm bone grabbing chest verts produces stretched membranes
+  at the shoulder. Attenuate every weight by an anatomical region mask,
+  but with a SOFT band (smoothstep over ~0.07): a binary mask re-creates
+  hard weight edges and the mesh tears at the region boundary.
+- **Smoothing re-bleeds** — mask, smooth, then mask again.
+- **Verify numerically**: count verts with max weight > 0.995 (should be
+  a small minority, body cores only) and verts with 2+ influences
+  (should be the large majority). On this asset: 87% blended.
+- **Verify visually**: single-joint extreme poses per joint. A tear
+  hides in a video and screams in a still.
+
+## Animation rules (the fix for "stiff, nota 2")
+
+- **Overlapping action is the whole game.** Every bone lags its parent:
+  spine +1f, chest +2f, head +3f, forearms +5f, hands/antenna +6f.
+  Nothing moves as one rigid block.
+- **Seamless loops need wrapped tangents**, not just matching end poses.
+  Emit each key one period BEFORE and AFTER the range, then render only
+  the range — the interpolator then has real neighbours on both sides
+  and the loop has no hitch. (Lag is a phase shift, so it stays cyclic.)
+- **Use the curves.** Per-keyframe interpolation + easing, not one flat
+  auto-bezier: SINE/EASE_OUT to settle, QUAD/EASE_IN to drive into a
+  contact, BACK/EASE_OUT to overshoot on impact, QUAD/EASE_IN_OUT to
+  hang at an apex.
+- **Breakdowns off the midpoint** so arcs favour one extreme, and
+  **moving holds** so an idle never freezes.
+- **Real walk mechanics**: contact / down / passing / up, knees bending
+  on the swing, feet rolling, hips twisting, arms counter-swinging with
+  the forearms trailing.
 - Blender encodes MP4 itself (`file_format='FFMPEG'`, MPEG4/H264) — no
-  system ffmpeg required, which also means no extra install on the
-  workstation.
+  system ffmpeg needed on the workstation. Never ship GIF.
 
 ## Hard-won rules (do not relearn these)
 

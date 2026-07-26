@@ -28,6 +28,14 @@ MODES = {
                   image="pytorch/pytorch:2.4.0-cuda12.4-cudnn9-devel",
                   disk=60, await_status="await-files", result="pbr_textured.glb",
                   errs=["err-gen.txt", "err-rast.txt", "err-pip.txt"], deadline=3600),
+    # Kit mode: many parts through ONE pod. The model load, pip install and
+    # boot are paid once instead of once per part, which is what makes a
+    # 10-part kit affordable at all.
+    "shape_kit": dict(boot="boot_shape_kit.py",
+                      image="pytorch/pytorch:2.4.0-cuda12.4-cudnn9-runtime",
+                      disk=60, await_status="await-views", result="kit.tar.gz",
+                      errs=["err-gen.txt", "err-pip.txt", "err-fatal.txt",
+                            "count.txt", "kit.txt"], deadline=9000),
 }
 
 
@@ -124,7 +132,8 @@ def run(mode, uploads, out_path):
                     except Exception:
                         pass
                 # rc=-11 after writing the GLB is a benign bpy exit segfault:
-                ok = os.path.exists(out_path) and os.path.getsize(out_path) > 300000
+                floor = 20000 if mode == "shape_kit" else 300000
+                ok = os.path.exists(out_path) and os.path.getsize(out_path) > floor
                 print("RESULT OK" if ok else f"RESULT BAD (status {st}; see {out_path}.err-*.txt)")
                 return ok
             time.sleep(30)
@@ -137,13 +146,27 @@ def run(mode, uploads, out_path):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("mode", choices=["shape", "paint"])
+    ap.add_argument("mode", choices=["shape", "paint", "shape_kit"])
+    ap.add_argument("--kit", help="shape_kit: dir with <part>/views/*.png")
     ap.add_argument("--views", help="shape: dir with front/left/back/right.png")
     ap.add_argument("--mesh", help="paint: retopo OBJ")
     ap.add_argument("--ref", help="paint: reference/concept image")
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
-    if a.mode == "shape":
+    if a.mode == "shape_kit":
+        assert a.kit, "--kit required"
+        parts = sorted(d for d in os.listdir(a.kit)
+                       if os.path.isdir(os.path.join(a.kit, d, "views")))
+        assert parts, f"no parts with views/ under {a.kit}"
+        uploads = {}
+        for p in parts:
+            for v in ("front", "left", "back", "right"):
+                uploads[f"{p}_{v}.png"] = os.path.join(a.kit, p, "views", f"{v}.png")
+        manifest = os.path.join(a.kit, "parts.txt")
+        open(manifest, "w").write("\n".join(parts))
+        uploads["parts.txt"] = manifest
+        print(f"kit: {len(parts)} parts, {len(uploads)} files")
+    elif a.mode == "shape":
         assert a.views, "--views required"
         uploads = {f"{v}.png": os.path.join(a.views, f"{v}.png")
                    for v in ("front", "left", "back", "right")}

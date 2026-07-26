@@ -56,13 +56,15 @@ for i, fn in enumerate(files):
     lo = Vector((min(v[k] for v in bb) for k in range(3)))
     hi = Vector((max(v[k] for v in bb) for k in range(3)))
     span = max(hi - lo)
-    s = (CELL * 0.36) / max(span, 1e-6)      # every part fills its cell
+    s = (CELL * 0.42) / max(span, 1e-6)      # every part fills its cell
     obj.scale = (s, s, s)
     bpy.context.view_layer.update()
+    # lay the grid on a VERTICAL wall (XZ) and shoot it straight on: a
+    # tilted floor grid foreshortens the rows and wastes most of the frame
     cx = (i % cols - (cols - 1) / 2) * CELL
-    cy = -(i // cols - (rows - 1) / 2) * CELL
+    cz = -(i // cols - (rows - 1) / 2) * CELL
     mid = (lo + hi) / 2 * s
-    obj.location = (cx - mid.x, cy - mid.y + 0.18, -mid.z)
+    obj.location = (cx - mid.x, -mid.y, cz - mid.z + CELL * 0.06)
     if CLAY:
         obj.data.materials.clear()
         obj.data.materials.append(clay_mat)
@@ -74,7 +76,8 @@ for i, fn in enumerate(files):
     txt.align_x = 'CENTER'
     to = bpy.data.objects.new(pid + "_lbl", txt)
     bpy.context.scene.collection.objects.link(to)
-    to.location = (cx, cy - CELL * 0.40, 0)
+    to.location = (cx, 0, cz - CELL * 0.40)
+    to.rotation_euler = (math.radians(90), 0, 0)
     m = bpy.data.materials.new("T")
     m.use_nodes = True
     m.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.1, 0.1, 0.12, 1)
@@ -86,9 +89,9 @@ sc.render.resolution_x = int(280 * cols)
 sc.render.resolution_y = int(300 * rows)
 sc.world = bpy.data.worlds.new("W")
 sc.world.use_nodes = True
-sc.world.node_tree.nodes["Background"].inputs[0].default_value = (0.93, 0.93, 0.95, 1)
-for ang, e in (((math.radians(58), 0, math.radians(35)), 3.0),
-               ((math.radians(65), 0, math.radians(-120)), 1.4)):
+sc.world.node_tree.nodes["Background"].inputs[0].default_value = (0.80, 0.81, 0.84, 1)
+for ang, e in (((math.radians(52), 0, math.radians(30)), 4.2),
+               ((math.radians(100), 0, math.radians(-140)), 2.0)):
     L = bpy.data.lights.new("L", 'SUN')
     L.energy = e
     o = bpy.data.objects.new("L", L)
@@ -97,13 +100,14 @@ for ang, e in (((math.radians(58), 0, math.radians(35)), 3.0),
 
 cam_d = bpy.data.cameras.new("C")
 cam_d.type = 'ORTHO'
-cam_d.ortho_scale = CELL * cols
+aspect = sc.render.resolution_y / sc.render.resolution_x
+cam_d.ortho_scale = max(CELL * cols, CELL * rows / aspect)
 cam = bpy.data.objects.new("C", cam_d)
 sc.collection.objects.link(cam)
 sc.camera = cam
 # slight 3/4 tilt so parts read as solids, not flat cutouts
-cam.location = (0, -6, 3.2)
-cam.rotation_euler = (math.radians(62), 0, 0)
+cam.location = (0, -8, 0)
+cam.rotation_euler = (math.radians(90), 0, 0)
 sc.render.filepath = OUT
 bpy.ops.render.render(write_still=True)
 print(f"[SHEET] {OUT}")

@@ -6,10 +6,37 @@ description: Production pipeline for game-ready stylized 3D characters from a te
 # Character Forge — idea → game-ready character in ~25 min / ~US$0.15
 
 Proven end-to-end on: chibi dragon (organic), frog mecha (hard-surface
-hybrid). **APPROVED scope: single-mesh characters.** Multi-part
-characters needing assembly (e.g. a kid inside a costume hood) are NOT
-production-approved — the union results are below bar; treat as
-experimental only.
+hybrid), stylized off-roader (vehicle).
+
+## DECOMPOSE FIRST — one shot is only for genuinely simple objects
+
+A single generation spends its whole resolution budget on the silhouette.
+Anything that is 3% of the frame — a bumper, a headlight, a hand — comes
+back as a suggestion of itself. That is not a prompt problem and no
+amount of retrying fixes it: the detail was never in the budget.
+
+So the FIRST step of every job is a study: **what is this made of?**
+Generate each part on its own, where it gets the full resolution, and
+deliver a KIT — every part as its own mesh, plus an assembly diagram —
+for a human to assemble. Do NOT auto-union the parts: our automated
+assembly was rejected twice, and a professional assembles a clean kit in
+minutes with a far better result.
+
+Always separate, even when the subject looks like one object:
+- **Character (even nude/plain)**: head, hands, feet at minimum. They
+  carry the most detail per cm² and read worst when generated whole.
+- **Any clothing/armour/costume**: its own part, over the body part.
+- **Vehicles (car, bike, plane)**: body, wheels, bumpers, lights, roll
+  cage, mirrors, snorkel, spare, winch, seats — anything a real
+  manufacturer bolts on separately is a separate part.
+- Rule of thumb: **if a factory would assemble it, we generate it apart.**
+
+One-shot whole-object is acceptable ONLY for a genuinely simple prop
+(a crate, a barrel, a rock).
+
+**Deliverable = the kit**: `parts/<name>.glb` for each piece, a labelled
+exploded-view diagram image, and a placement manifest (position, scale,
+rotation per part) so assembly is mechanical rather than guesswork.
 
 ## Requirements (workstation)
 

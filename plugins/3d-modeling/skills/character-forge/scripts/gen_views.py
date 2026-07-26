@@ -39,6 +39,23 @@ BASE_STYLE_VEHICLE = ("The whole vehicle fully visible with margin, wheels resti
                       "proportions and details as the input vehicle")
 
 
+# A KIT part is generated alone so it gets the whole resolution budget.
+# It has no ground contact and no host object — saying "feet on the
+# ground" or "the whole vehicle" here produces a part welded to a car.
+VIEW_SPECS_PART = {
+    "front": "straight-on FRONT view of the part, centred, its mounting face toward the camera",
+    "left": "straight-on LEFT SIDE view of the part, exact 90-degree profile",
+    "back": "straight-on BACK view of the part: the mounting/hidden side, showing brackets, bolts or hollow backing — never repeat the front face",
+    "right": "straight-on RIGHT SIDE view of the part, exact 90-degree profile",
+}
+BASE_STYLE_PART = ("ONLY this single isolated component, floating and complete, "
+                   "detached from any vehicle or character, nothing else in frame, "
+                   "filling most of the frame, strictly orthographic with no "
+                   "perspective, plain pure white background, no ground, no shadow, "
+                   "no text, no labels, no logos, exactly the same colors and "
+                   "materials as the input")
+
+
 def _multipart(fields, files):
     boundary = "----charforge"
     out = b""
@@ -82,15 +99,18 @@ def main():
     ap.add_argument("--views-only", action="store_true",
                     help="skip concept generation, reuse <out>/concept.png")
     ap.add_argument("--only", help="regenerate a single view (front/left/back/right)")
-    ap.add_argument("--kind", choices=["character", "vehicle"], default="character",
+    ap.add_argument("--kind", choices=["character", "vehicle", "part"], default="character",
                     help="which view language to use; vehicles/props are not characters")
     args = ap.parse_args()
-    specs = VIEW_SPECS_VEHICLE if args.kind == "vehicle" else VIEW_SPECS
-    style = BASE_STYLE_VEHICLE if args.kind == "vehicle" else BASE_STYLE
-    subject = "vehicle" if args.kind == "vehicle" else "character"
+    specs = {"vehicle": VIEW_SPECS_VEHICLE, "part": VIEW_SPECS_PART}.get(
+        args.kind, VIEW_SPECS)
+    style = {"vehicle": BASE_STYLE_VEHICLE, "part": BASE_STYLE_PART}.get(
+        args.kind, BASE_STYLE)
+    subject = {"vehicle": "vehicle", "part": "component"}.get(args.kind, "character")
     # a car is wider than it is tall; the portrait concept canvas that suits
     # a standing character wastes half the frame on one
-    concept_size = "1536x1024" if args.kind == "vehicle" else "1024x1536"
+    concept_size = "1024x1024" if args.kind == "part" else (
+        "1536x1024" if args.kind == "vehicle" else "1024x1536")
     os.makedirs(f"{args.out}/views", exist_ok=True)
     concept_path = f"{args.out}/concept.png"
 

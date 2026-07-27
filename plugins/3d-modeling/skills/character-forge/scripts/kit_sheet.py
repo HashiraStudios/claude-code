@@ -29,6 +29,7 @@ if not files:
 cols = min(4, len(files))
 rows = math.ceil(len(files) / cols)
 CELL = 2.4
+PREVIEW_POLYS = 60000   # per part, preview only
 print(f"[SHEET] {len(files)} parts in {cols}x{rows}")
 
 clay_mat = bpy.data.materials.new("Clay")
@@ -52,6 +53,16 @@ for i, fn in enumerate(files):
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
     bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+    # Raw generator output is millions of polys per part. At sheet size the
+    # extra density is invisible but it dominates render time — the first
+    # run took 25 MINUTES for one image. Decimate for the preview only;
+    # the delivered meshes are untouched.
+    if len(obj.data.polygons) > PREVIEW_POLYS:
+        d = obj.modifiers.new("dec", 'DECIMATE')
+        d.ratio = PREVIEW_POLYS / len(obj.data.polygons)
+        bpy.ops.object.modifier_apply(modifier=d.name)
+        print(f"   {pid}: decimated to {len(obj.data.polygons)} polys for preview")
+
     bb = [Vector(c) for c in obj.bound_box]
     lo = Vector((min(v[k] for v in bb) for k in range(3)))
     hi = Vector((max(v[k] for v in bb) for k in range(3)))
@@ -104,6 +115,7 @@ sc.world.node_tree.nodes["Background"].inputs[0].default_value = (
 sc.eevee.use_gtao = True
 sc.eevee.gtao_distance = 0.35
 sc.eevee.gtao_factor = 1.0
+sc.eevee.taa_render_samples = 24   # 64 buys nothing on flat clay
 # key / fill / rim — one sun flattens a grey object into a silhouette
 for ang, e in (((math.radians(58), 0, math.radians(28)), 4.5),
                ((math.radians(72), 0, math.radians(-115)), 1.8),

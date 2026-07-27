@@ -72,6 +72,10 @@ for i, fn in enumerate(files):
         # two applied rotations, not one euler: applied in sequence the
         # second turn happens about WORLD X, which is the tilt that reads as
         # isometric. A single XYZ euler tilts about the already-turned axis.
+        # The glTF importer leaves objects in QUATERNION rotation mode, and
+        # assigning rotation_euler in that mode is silently ignored — the
+        # part renders unrotated and nothing errors.
+        obj.rotation_mode = 'XYZ'
         for axis, deg in (('Z', ISO_Z), ('X', ISO_X)):
             obj.rotation_euler = (math.radians(deg) if axis == 'X' else 0, 0,
                                   math.radians(deg) if axis == 'Z' else 0)

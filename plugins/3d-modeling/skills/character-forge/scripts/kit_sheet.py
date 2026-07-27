@@ -15,7 +15,12 @@ from mathutils import Vector
 
 argv = sys.argv[sys.argv.index("--") + 1:]
 PARTS_DIR, MANIFEST, OUT = argv[0], argv[1], argv[2]
-CLAY = len(argv) > 3 and argv[3] == "clay"
+CLAY = "clay" in argv[3:]
+# A straight-on orthographic grid flattens every part into a cutout. Turning
+# each PART to a three-quarter angle (rather than tilting the camera) keeps
+# the grid square while letting depth read.
+FLAT = "flat" in argv[3:]
+ISO_Z, ISO_X = 38.0, -24.0
 
 man = json.load(open(MANIFEST))
 labels = {p["id"]: (p.get("label", p["id"]), p.get("qty", 1)) for p in man["parts"]}
@@ -62,6 +67,15 @@ for i, fn in enumerate(files):
         d.ratio = PREVIEW_POLYS / len(obj.data.polygons)
         bpy.ops.object.modifier_apply(modifier=d.name)
         print(f"   {pid}: decimated to {len(obj.data.polygons)} polys for preview")
+
+    if not FLAT:
+        # two applied rotations, not one euler: applied in sequence the
+        # second turn happens about WORLD X, which is the tilt that reads as
+        # isometric. A single XYZ euler tilts about the already-turned axis.
+        for axis, deg in (('Z', ISO_Z), ('X', ISO_X)):
+            obj.rotation_euler = (math.radians(deg) if axis == 'X' else 0, 0,
+                                  math.radians(deg) if axis == 'Z' else 0)
+            bpy.ops.object.transform_apply(rotation=True)
 
     bb = [Vector(c) for c in obj.bound_box]
     lo = Vector((min(v[k] for v in bb) for k in range(3)))

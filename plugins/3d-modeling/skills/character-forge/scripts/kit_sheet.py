@@ -34,7 +34,7 @@ print(f"[SHEET] {len(files)} parts in {cols}x{rows}")
 clay_mat = bpy.data.materials.new("Clay")
 clay_mat.use_nodes = True
 _b = clay_mat.node_tree.nodes["Principled BSDF"]
-_b.inputs["Base Color"].default_value = (0.62, 0.60, 0.58, 1)
+_b.inputs["Base Color"].default_value = (0.80, 0.79, 0.77, 1)
 _b.inputs["Roughness"].default_value = 0.62
 
 for i, fn in enumerate(files):
@@ -80,7 +80,14 @@ for i, fn in enumerate(files):
     to.rotation_euler = (math.radians(90), 0, 0)
     m = bpy.data.materials.new("T")
     m.use_nodes = True
-    m.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.1, 0.1, 0.12, 1)
+    _t = m.node_tree.nodes["Principled BSDF"]
+    _t.inputs["Base Color"].default_value = (
+        (0.95, 0.95, 0.97, 1) if CLAY else (0.1, 0.1, 0.12, 1))
+    # labels must stay legible on either background, so emit rather than
+    # rely on whatever light happens to hit flat text
+    _t.inputs["Emission Color"].default_value = (
+        (0.92, 0.93, 0.96, 1) if CLAY else (0.1, 0.1, 0.12, 1))
+    _t.inputs["Emission Strength"].default_value = 1.0
     to.data.materials.append(m)
 
 sc = bpy.context.scene
@@ -89,9 +96,18 @@ sc.render.resolution_x = int(280 * cols)
 sc.render.resolution_y = int(300 * rows)
 sc.world = bpy.data.worlds.new("W")
 sc.world.use_nodes = True
-sc.world.node_tree.nodes["Background"].inputs[0].default_value = (0.80, 0.81, 0.84, 1)
-for ang, e in (((math.radians(52), 0, math.radians(30)), 4.2),
-               ((math.radians(100), 0, math.radians(-140)), 2.0)):
+sc.world.node_tree.nodes["Background"].inputs[0].default_value = (
+    (0.055, 0.06, 0.075, 1) if CLAY else (0.88, 0.89, 0.92, 1))
+# Clay QA needs a LIGHT model on a DARK ground: light-on-light hides
+# exactly the form we are inspecting for. Ambient occlusion is what makes
+# a grey object read as shape rather than a flat blob.
+sc.eevee.use_gtao = True
+sc.eevee.gtao_distance = 0.35
+sc.eevee.gtao_factor = 1.0
+# key / fill / rim — one sun flattens a grey object into a silhouette
+for ang, e in (((math.radians(58), 0, math.radians(28)), 4.5),
+               ((math.radians(72), 0, math.radians(-115)), 1.8),
+               ((math.radians(115), 0, math.radians(190)), 2.6)):
     L = bpy.data.lights.new("L", 'SUN')
     L.energy = e
     o = bpy.data.objects.new("L", L)

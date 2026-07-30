@@ -57,6 +57,17 @@
       },
       "source": "./plugins/security-guidance",
       "category": "security"
+    },
+    {
+      "name": "3d-modeling",
+      "description": "Professional 3D modeling skills for Blender via MCP: executable bpy/bmesh construction recipes, goal-to-technique map, multi-view visual critique loop, reference-driven & real-scale modeling, hard-surface vs organic topology, plus the game-ready asset export pipeline for Roblox and UEFN",
+      "version": "1.0.0",
+      "author": {
+        "name": "Takayu Studio",
+        "email": "vizuu3d@gmail.com"
+      },
+      "source": "./plugins/3d-modeling",
+      "category": "development"
     }
   ]
 }

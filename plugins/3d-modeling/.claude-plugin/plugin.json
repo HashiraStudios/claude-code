@@ -1,0 +1,9 @@
+{
+  "name": "3d-modeling",
+  "version": "1.0.0",
+  "description": "Professional 3D modeling skills for Blender via MCP. Turns modeling from hotkey hints into executable bpy/bmesh construction recipes, adds a goal-to-technique map, a mandatory multi-view visual critique loop, reference-driven & real-scale modeling, and separate hard-surface vs organic topology tracks. Includes the game-ready asset export pipeline (Roblox / UEFN).",
+  "author": {
+    "name": "Takayu Studio",
+    "email": "vizuu3d@gmail.com"
+  }
+}

@@ -54,6 +54,12 @@ def gql(query, variables=None):
 # TypeError. Any 24GB+ card runs this pipeline.
 GPUS = ["NVIDIA GeForce RTX 4090", "NVIDIA RTX A6000", "NVIDIA A40",
         "NVIDIA GeForce RTX 3090", "NVIDIA RTX A5000"]
+# RunPod keeps handing back the same machine while it is the only free
+# unit of a type — including a BROKEN one that never starts containers.
+# The capacity fallback can't see that, so RUNPOD_GPUS lets a caller
+# steer around a bad tier: a comma-separated list that overrides GPUS.
+if os.environ.get("RUNPOD_GPUS"):
+    GPUS = [g.strip() for g in os.environ["RUNPOD_GPUS"].split(",") if g.strip()]
 
 
 def deploy(mode, name):

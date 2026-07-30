@@ -44,9 +44,9 @@ BASE_STYLE_VEHICLE = ("The whole vehicle fully visible with margin, wheels resti
 # ground" or "the whole vehicle" here produces a part welded to a car.
 VIEW_SPECS_PART = {
     "front": "straight-on FRONT view of the part, centred, its mounting face toward the camera",
-    "left": "straight-on LEFT SIDE view of the part, exact 90-degree profile",
+    "left": "straight-on LEFT SIDE view of the part, exact 90-degree profile. If the part is flat or blade-like this view is a GENUINELY NARROW EDGE-ON SLIVER — the thin spine toward the camera, only a fraction as wide as the front view — never a bent version and never the front view repeated. The part keeps EXACTLY the same straight alignment as the front view",
     "back": "straight-on BACK view of the part: the mounting/hidden side, showing brackets, bolts or hollow backing — never repeat the front face",
-    "right": "straight-on RIGHT SIDE view of the part, exact 90-degree profile",
+    "right": "straight-on RIGHT SIDE view of the part, exact 90-degree profile. If the part is flat or blade-like this view is a GENUINELY NARROW EDGE-ON SLIVER — the thin spine toward the camera, only a fraction as wide as the front view — never a bent version and never the front view repeated. The part keeps EXACTLY the same straight alignment as the front view",
 }
 BASE_STYLE_PART = ("ONLY this single isolated component, floating and complete, "
                    "detached from any vehicle or character, nothing else in frame, "

@@ -45,7 +45,7 @@ BASE_STYLE_VEHICLE = ("The whole vehicle fully visible with margin, wheels resti
 VIEW_SPECS_PART = {
     "front": "straight-on FRONT view of the part, centred, its mounting face toward the camera",
     "left": "straight-on LEFT SIDE view of the part, exact 90-degree profile. If the part is flat or blade-like this view is a GENUINELY NARROW EDGE-ON SLIVER — the thin spine toward the camera, only a fraction as wide as the front view — never a bent version and never the front view repeated. The part keeps EXACTLY the same straight alignment as the front view",
-    "back": "straight-on BACK view of the part: the mounting/hidden side, showing brackets, bolts or hollow backing — never repeat the front face. The part keeps EXACTLY the same upright, straight alignment as the front view, never tilted or diagonal",
+    "back": "straight-on BACK view of the part: the mounting/hidden side, showing brackets, bolts or hollow backing — never repeat the front face. The part keeps EXACTLY the same upright, straight alignment as the front view, never tilted or diagonal. Its outer SILHOUETTE is the front view's silhouette MIRRORED left-right — same curves, same notches, on the opposite side",
     "right": "straight-on RIGHT SIDE view of the part, exact 90-degree profile. If the part is flat or blade-like this view is a GENUINELY NARROW EDGE-ON SLIVER — the thin spine toward the camera, only a fraction as wide as the front view — never a bent version and never the front view repeated. The part keeps EXACTLY the same straight alignment as the front view",
 }
 BASE_STYLE_PART = ("ONLY this single isolated component, floating and complete, "
